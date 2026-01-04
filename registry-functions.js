@@ -418,9 +418,11 @@ function displayConfirmedList() {
         </div>
       </div>
       
-      <div style="margin-bottom:12px;">
-        <div style="color:#999;font-size:11px;font-weight:500;margin-bottom:4px;text-transform:uppercase;">HN</div>
+      <div style="margin-bottom:12px;display:grid;gap:4px;">
+        <div style="color:#999;font-size:11px;font-weight:500;text-transform:uppercase;">HN</div>
         <div style="color:#2e7d32;font-size:18px;font-weight:700;">${booking.patient_hn}</div>
+        <div style="color:#999;font-size:11px;font-weight:500;">ชื่อ-สกุล</div>
+        <div style="color:#2e7d32;font-size:15px;font-weight:600;">${booking.patient_name || '-'}</div>
       </div>
       
       <div style="height:1px;background:linear-gradient(90deg,#e0e0e0 0%,transparent 100%);margin:16px 0;"></div>
