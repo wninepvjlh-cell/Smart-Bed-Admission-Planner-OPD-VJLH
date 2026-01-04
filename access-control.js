@@ -19,7 +19,8 @@
       'booking.html',
       'booking-patient-info.html',
       'registry.html',
-      'data-archive.html'
+      'data-archive.html',
+      'ipd.html'
     ],
     ipd: [
       'index.html',
@@ -29,7 +30,7 @@
     ]
   };
   const READ_ONLY_PAGES = {
-    opd: new Set(['ipd.html'])
+    opd: new Set()
   };
   const READ_ONLY_TITLE = 'สำหรับดูสถานะเท่านั้น';
 
