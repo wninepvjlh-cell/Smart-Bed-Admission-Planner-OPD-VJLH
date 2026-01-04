@@ -55,6 +55,88 @@ function loadBookingData() {
   return JSON.parse(stored);
 }
 
+function normalizeBookingData(raw) {
+  const source = raw && typeof raw === 'object' ? raw : {};
+  return {
+    booked: Array.isArray(source.booked) ? source.booked : [],
+    confirmed: Array.isArray(source.confirmed) ? source.confirmed : [],
+    admitted: Array.isArray(source.admitted) ? source.admitted : [],
+    cancelled: Array.isArray(source.cancelled) ? source.cancelled : []
+  };
+}
+
+function downloadBookingData() {
+  try {
+    const data = normalizeBookingData(loadBookingData());
+    const timestamp = new Date().toISOString().replace(/[:T\-]/g, '').slice(0, 14);
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `booking-data-${timestamp}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error('Unable to download booking data:', error);
+    alert('ไม่สามารถดาวน์โหลดข้อมูลได้');
+  }
+}
+
+function triggerBookingImport() {
+  const input = document.getElementById('booking-import-file');
+  if (input) {
+    input.click();
+  }
+}
+
+async function handleBookingImport(event) {
+  const file = event && event.target ? event.target.files[0] : null;
+  if (!file) {
+    return;
+  }
+  try {
+    const text = await file.text();
+    const parsed = JSON.parse(text);
+    const normalized = normalizeBookingData(parsed);
+    if (!confirm('ต้องการแทนที่ข้อมูลการจองบนเครื่องนี้ด้วยไฟล์ที่เลือกหรือไม่?')) {
+      event.target.value = '';
+      return;
+    }
+    localStorage.setItem('bookingData', JSON.stringify(normalized));
+    displayBookingList();
+    displayConfirmedList();
+    alert('นำเข้าข้อมูลเรียบร้อยแล้ว');
+  } catch (error) {
+    console.error('Unable to import booking data:', error);
+    alert('ไฟล์ไม่ถูกต้องหรือไม่สามารถนำเข้าได้');
+  } finally {
+    event.target.value = '';
+  }
+}
+
+async function copyBookingDataToClipboard() {
+  try {
+    const data = normalizeBookingData(loadBookingData());
+    const json = JSON.stringify(data, null, 2);
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(json);
+    } else {
+      const temp = document.createElement('textarea');
+      temp.value = json;
+      document.body.appendChild(temp);
+      temp.select();
+      document.execCommand('copy');
+      document.body.removeChild(temp);
+    }
+    alert('คัดลอกข้อมูลไปยังคลิปบอร์ดแล้ว');
+  } catch (error) {
+    console.error('Unable to copy booking data:', error);
+    alert('ไม่สามารถคัดลอกข้อมูลได้');
+  }
+}
+
 // Thai month names
 const thaiMonths = [
   'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
@@ -1125,6 +1207,11 @@ function confirmAdmitPatient() {
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
   displayBookingList();
+  displayConfirmedList();
+  const importInput = document.getElementById('booking-import-file');
+  if (importInput) {
+    importInput.addEventListener('change', handleBookingImport);
+  }
   
   // Auto-refresh every 10 seconds
   setInterval(() => {
