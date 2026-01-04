@@ -42,19 +42,43 @@
   window.__sbpDataPurge();
 })();
 
+function normalizeAdmitValue(value) {
+  return (value || '').toString().trim().toLowerCase();
+}
+
+function isAdmittedFloor2(patient) {
+  if (!patient) {
+    return false;
+  }
+  const floorValue = normalizeAdmitValue(patient.floor || patient.floor_name || patient.ward || patient.ward_floor);
+  const statusValue = normalizeAdmitValue(patient.admit_status || patient.status);
+  const matchesFloor = floorValue === 'floor2' ||
+    floorValue === 'floor 2' ||
+    floorValue === '2' ||
+    floorValue.includes('floor2') ||
+    floorValue.includes('floor 2') ||
+    floorValue.includes('ชั้น 2');
+  if (!matchesFloor || !statusValue) {
+    return false;
+  }
+  if (statusValue === 'admitted' ||
+      statusValue === 'admit' ||
+      statusValue === 'ipd' ||
+      statusValue === 'inward' ||
+      statusValue === 'in ward') {
+    return true;
+  }
+  if (statusValue.startsWith('admitted')) {
+    return true;
+  }
+  return statusValue.startsWith('admit') && !statusValue.includes('waiting');
+}
+
 // --- Helper: Calculate IMC/Non-IMC by Disease Group for floor2 (for Dashboard sync) ---
 function getIMCNonIMCByDiseaseFloor2() {
   const bookingData = JSON.parse(localStorage.getItem('bookingData')) || { admitted: [] };
-  // กรองเฉพาะ admitted ที่ floor2 (ไม่กรอง assigned_bed) และไม่ซ้ำ HN/patient_id
-  // เตียงสามัญและพิเศษของชั้น 2 ตาม logic IPD
-  const standardBeds = ['B4', 'B5', 'B6', 'B7', 'B8', 'B9', 'B10', 'B11', 'B12', 'B14', 'B15', 'B16'];
-  const specialBeds = ['V1', 'V2', 'V3', 'V4', 'V5', 'V6'];
-  let admitted = (bookingData.admitted || []).filter(p =>
-    p.admit_status === 'admitted' &&
-    p.floor === 'floor2' &&
-    p.assigned_bed &&
-    (standardBeds.includes(p.assigned_bed) || specialBeds.includes(p.assigned_bed))
-  );
+  // กรองเฉพาะผู้ป่วยที่อยู่ชั้น 2 และมีสถานะ admit (รองรับค่าที่สะกดต่างกัน)
+  let admitted = (bookingData.admitted || []).filter(isAdmittedFloor2);
   // กรองซ้ำ (unique HN หรือ patient_id)
   const seen = new Set();
   admitted = admitted.filter(p => {
@@ -1448,6 +1472,8 @@ function ensureIPDPageReady() {
 }
 
 ensureIPDPageReady();
+
+});
 
 // Close modal when clicking outside
 document.addEventListener('click', function(event) {

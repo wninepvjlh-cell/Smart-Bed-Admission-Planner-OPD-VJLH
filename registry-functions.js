@@ -1281,3 +1281,4 @@ window.addEventListener('sbpRemoteStorageSync', function(event) {
   const detail = event && event.detail;
   handleRegistryStorageUpdate(detail && typeof detail.key === 'string' ? detail.key : undefined);
 });
+});

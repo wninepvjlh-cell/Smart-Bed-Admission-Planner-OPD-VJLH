@@ -43,6 +43,37 @@
   let isInitialized = false;
   const queuedSyncOps = [];
 
+  let syncDisabled = false;
+  let unsubscribeSnapshot = null;
+
+  function isPermissionDeniedError(error) {
+    return error && (error.code === 'permission-denied' || (typeof error.message === 'string' && error.message.includes('permission')));
+  }
+
+  function disableSync(context, error) {
+    if (syncDisabled) {
+      return;
+    }
+    syncDisabled = true;
+    window.__sbpFirestoreSyncEnabled = false;
+    if (typeof window.__sbpDataPurge === 'function') {
+      try {
+        window.__sbpDataPurge();
+      } catch (purgeError) {
+        console.warn('[FirestoreSync] Unable to run fallback purge after disabling sync', purgeError);
+      }
+    }
+    if (unsubscribeSnapshot) {
+      try {
+        unsubscribeSnapshot();
+      } catch (unsubscribeError) {
+        console.warn('[FirestoreSync] Unable to unsubscribe snapshot listener', unsubscribeError);
+      }
+      unsubscribeSnapshot = null;
+    }
+    console.warn('[FirestoreSync] Sync disabled:', context, error);
+  }
+
   function reserveAwareKeys(data) {
     return Object.keys(data || {}).filter(key => !key.startsWith(RESERVED_PREFIX));
   }
@@ -93,7 +124,7 @@
   }
 
   function syncSet(key, value) {
-    if (!shouldSyncKey(key)) {
+    if (syncDisabled || !shouldSyncKey(key)) {
       return;
     }
     pendingWrites.set(key, value);
@@ -101,12 +132,16 @@
       [key]: value,
       [`${RESERVED_PREFIX}updatedAt`]: FieldValue ? FieldValue.serverTimestamp() : new Date().toISOString()
     }, { merge: true }).catch(error => {
+      if (isPermissionDeniedError(error)) {
+        disableSync(`permission denied while writing key "${key}"`, error);
+        return;
+      }
       console.error('[FirestoreSync] Failed to write key to Firestore', key, error);
     });
   }
 
   function syncRemove(key) {
-    if (!shouldSyncKey(key)) {
+    if (syncDisabled || !shouldSyncKey(key)) {
       return;
     }
     if (!FieldValue) {
@@ -118,6 +153,10 @@
       [key]: FieldValue.delete(),
       [`${RESERVED_PREFIX}updatedAt`]: FieldValue.serverTimestamp()
     }, { merge: true }).catch(error => {
+      if (isPermissionDeniedError(error)) {
+        disableSync(`permission denied while removing key "${key}"`, error);
+        return;
+      }
       console.error('[FirestoreSync] Failed to remove key from Firestore', key, error);
     });
   }
@@ -187,6 +226,9 @@
   }
 
   const initialLoadPromise = docRef.get().then(function snapshotLoaded(snapshot) {
+    if (syncDisabled) {
+      return;
+    }
     if (snapshot.exists) {
       applyRemoteSnapshot(snapshot.data() || {});
       return;
@@ -196,9 +238,19 @@
     if (FieldValue) {
       initialData[`${RESERVED_PREFIX}createdAt`] = FieldValue.serverTimestamp();
     }
-    return docRef.set(initialData, { merge: true });
+    return docRef.set(initialData, { merge: true }).catch(function initialWriteError(error) {
+      if (isPermissionDeniedError(error)) {
+        disableSync('permission denied during initial write', error);
+        return;
+      }
+      console.error('[FirestoreSync] Failed to write initial data', error);
+    });
   }).catch(function handleInitialLoadError(error) {
-    console.error('[FirestoreSync] Failed to load initial data', error);
+    if (isPermissionDeniedError(error)) {
+      disableSync('permission denied during initial load', error);
+    } else {
+      console.error('[FirestoreSync] Failed to load initial data', error);
+    }
   }).finally(function finalizeInitialization() {
     isInitialized = true;
     flushQueuedSyncOps();
@@ -208,12 +260,18 @@
     return undefined;
   });
 
-  docRef.onSnapshot(function onSnapshot(snapshot) {
-    if (!snapshot.exists) {
-      return;
-    }
-    applyRemoteSnapshot(snapshot.data() || {});
-  }, function onSnapshotError(error) {
-    console.error('[FirestoreSync] Snapshot listener error', error);
-  });
+  if (!syncDisabled) {
+    unsubscribeSnapshot = docRef.onSnapshot(function onSnapshot(snapshot) {
+      if (!snapshot.exists) {
+        return;
+      }
+      applyRemoteSnapshot(snapshot.data() || {});
+    }, function onSnapshotError(error) {
+      if (isPermissionDeniedError(error)) {
+        disableSync('permission denied in snapshot listener', error);
+      } else {
+        console.error('[FirestoreSync] Snapshot listener error', error);
+      }
+    });
+  }
 })();

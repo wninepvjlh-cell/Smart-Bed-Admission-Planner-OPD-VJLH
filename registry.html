@@ -39,12 +39,7 @@
    <main style="padding:24px;">
      <div style="background:white;padding:24px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.08);">
        <h2 style="color:#00796b;font-size:22px;margin:0 0 12px 0;">ทะเบียนจองเตียง</h2>
-       <div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:18px;">
-         <button onclick="downloadBookingData()" style="padding:10px 18px;background:linear-gradient(135deg,#4dd0e1 0%,#26c6da 100%);color:white;border:none;border-radius:8px;font-weight:600;font-size:14px;cursor:pointer;box-shadow:0 2px 8px rgba(77,208,225,0.3);transition:all 0.2s;" onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 4px 12px rgba(77,208,225,0.4)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 2px 8px rgba(77,208,225,0.3)'">⬇️ ดาวน์โหลดข้อมูล</button>
-         <button onclick="triggerBookingImport()" style="padding:10px 18px;background:linear-gradient(135deg,#66bb6a 0%,#43a047 100%);color:white;border:none;border-radius:8px;font-weight:600;font-size:14px;cursor:pointer;box-shadow:0 2px 8px rgba(102,187,106,0.3);transition:all 0.2s;" onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 4px 12px rgba(102,187,106,0.4)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 2px 8px rgba(102,187,106,0.3)'">⬆️ นำเข้าข้อมูล</button>
-         <button onclick="copyBookingDataToClipboard()" style="padding:10px 18px;background:#f5f5f5;color:#00796b;border:2px solid #b2dfdb;border-radius:8px;font-weight:600;font-size:14px;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='#e0f2f1'" onmouseout="this.style.background='#f5f5f5'">📋 คัดลอก JSON</button>
-       </div>
-       <input type="file" id="booking-import-file" accept="application/json" style="display:none;">
+       
        
        <!-- Subtab Navigation -->
        <div style="display:flex;gap:12px;margin-bottom:24px;border-bottom:2px solid #e0e0e0;flex-wrap:wrap;">

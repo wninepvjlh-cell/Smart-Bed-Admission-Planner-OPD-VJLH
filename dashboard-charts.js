@@ -13,6 +13,41 @@ const pieColors = [
 
 const bookingDataListeners = [];
 
+function normalizeValue(value) {
+  return (value || '').toString().trim().toLowerCase();
+}
+
+function isAdmittedFloor2Patient(patient) {
+  if (!patient) {
+    return false;
+  }
+  const floorValue = normalizeValue(patient.floor || patient.floor_name || patient.ward || patient.ward_floor);
+  const statusValue = normalizeValue(patient.admit_status || patient.status);
+  const matchesFloor = floorValue === 'floor2' ||
+    floorValue === 'floor 2' ||
+    floorValue === '2' ||
+    floorValue.includes('floor2') ||
+    floorValue.includes('floor 2') ||
+    floorValue.includes('ชั้น 2');
+  if (!matchesFloor) {
+    return false;
+  }
+  if (!statusValue) {
+    return false;
+  }
+  if (statusValue === 'admitted' ||
+      statusValue === 'admit' ||
+      statusValue === 'ipd' ||
+      statusValue === 'inward' ||
+      statusValue === 'in ward') {
+    return true;
+  }
+  if (statusValue.startsWith('admitted')) {
+    return true;
+  }
+  return statusValue.startsWith('admit') && !statusValue.includes('waiting');
+}
+
 function notifyBookingDataListeners(key) {
   if (key && key !== 'bookingData') {
     return;
@@ -43,7 +78,7 @@ window.addEventListener('sbpRemoteStorageSync', function(event) {
 
 function getAdmittedPatientsFloor2() {
   const bookingData = JSON.parse(localStorage.getItem('bookingData')) || { admitted: [] };
-  return (bookingData.admitted || []).filter(p => p.floor === 'floor2' && p.admit_status === 'admitted');
+  return (bookingData.admitted || []).filter(isAdmittedFloor2Patient);
 }
 
 function getDiseaseGroupIndex(diagnosis) {
@@ -83,6 +118,8 @@ function renderPieChart() {
   const ctxPie = canvas.getContext('2d');
   if (window.mainDiseasePieChart && window.mainDiseasePieChart.data && window.mainDiseasePieChart.data.datasets) {
     window.mainDiseasePieChart.data.datasets[0].data = pieData;
+    window.mainDiseasePieChart.$pieIMC = pieIMC;
+    window.mainDiseasePieChart.$pieNonIMC = pieNonIMC;
     window.mainDiseasePieChart.update();
   } else {
     window.mainDiseasePieChart = new Chart(ctxPie, {
@@ -107,8 +144,11 @@ function renderPieChart() {
                 const total = context.dataset.data.reduce((a, b) => a + b, 0);
                 const value = context.dataset.data[idx];
                 const percent = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
-                const imc = pieIMC[idx];
-                const nonimc = pieNonIMC[idx];
+                const chartInstance = context.chart;
+                const imcSource = chartInstance.$pieIMC || [];
+                const nonimcSource = chartInstance.$pieNonIMC || [];
+                const imc = imcSource[idx] || 0;
+                const nonimc = nonimcSource[idx] || 0;
                 return `${pieLabels[idx]}: ${percent}% (${value} คน)\nIMC: ${imc} คน, Non-IMC: ${nonimc} คน`;
               }
             }
@@ -117,6 +157,8 @@ function renderPieChart() {
         }
       }
     });
+    window.mainDiseasePieChart.$pieIMC = pieIMC;
+    window.mainDiseasePieChart.$pieNonIMC = pieNonIMC;
   }
 
   function renderCustomLegend(chart, legendId) {
