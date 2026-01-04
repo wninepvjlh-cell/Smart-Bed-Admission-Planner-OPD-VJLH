@@ -668,7 +668,17 @@ function setConfirmedDetailInputsDisabled(disabled) {
 }
 
 function enableConfirmedDetailEdit() {
-  setConfirmedDetailInputsDisabled(false);
+  const editableIds = ['confirmed-detail-hn', 'confirmed-detail-name', 'confirmed-detail-age'];
+  editableIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) {
+      return;
+    }
+    el.disabled = false;
+    if ('readOnly' in el) {
+      el.readOnly = false;
+    }
+  });
   document.getElementById('edit-confirmed-detail-btn').style.display = 'none';
   document.getElementById('save-confirmed-detail-btn').style.display = '';
 }

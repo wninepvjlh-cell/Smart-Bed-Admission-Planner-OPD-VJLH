@@ -394,17 +394,6 @@
          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:20px;border-top:2px solid #e0e0e0;padding-top:16px;">
            <button id="edit-confirmed-detail-btn" onclick="enableConfirmedDetailEdit()" style="padding:12px;background:linear-gradient(135deg,#4dd0e1 0%,#26c6da 100%);color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:14px;box-shadow:0 2px 8px rgba(77,208,225,0.3);transition:all 0.2s;">✏️ แก้ไขข้อมูล</button>
            <button id="save-confirmed-detail-btn" onclick="saveConfirmedDetailEdit()" style="padding:12px;background:linear-gradient(135deg,#66bb6a 0%,#43a047 100%);color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:14px;box-shadow:0 2px 8px rgba(102,187,106,0.3);transition:all 0.2s;display:none;">💾 บันทึก</button>
-           <script>
-             // ป้องกันการ enable ฟิลด์วันที่ Admit และประเภทเตียง
-             function enableConfirmedDetailEdit() {
-               // ...existing code for enabling other fields...
-               document.getElementById('confirmed-detail-admit-date').disabled = true;
-               document.getElementById('confirmed-detail-admit-date').readOnly = true;
-               document.getElementById('confirmed-detail-bed-type').disabled = true;
-               document.getElementById('confirmed-detail-bed-type').readOnly = true;
-               document.getElementById('confirmed-detail-bed-type').tabIndex = -1;
-             }
-           </script>
            <button onclick="admitPatientFromDetail()" style="padding:12px;background:linear-gradient(135deg,#66bb6a 0%,#43a047 100%);color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:14px;box-shadow:0 2px 8px rgba(102,187,106,0.3);transition:all 0.2s;">🏥 ส่ง Admit</button>
            <button onclick="openPostponeModal()" style="padding:12px;background:linear-gradient(135deg,#ffa726 0%,#fb8c00 100%);color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:14px;box-shadow:0 2px 8px rgba(255,167,38,0.3);transition:all 0.2s;">📅 เลื่อนวัน</button>
            <button onclick="cancelConfirmedFromDetail()" style="padding:12px;background:linear-gradient(135deg,#ef5350 0%,#e53935 100%);color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:14px;box-shadow:0 2px 8px rgba(239,83,80,0.3);transition:all 0.2s;">❌ ยกเลิก</button>
