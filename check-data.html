@@ -3,11 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <title>เช็คข้อมูล</title>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="firebase-init.js"></script>
+    <script src="firestore-sync.js"></script>
 </head>
 <body>
     <script>
         (function runOneTimePatientDataPurge() {
             if (typeof window === 'undefined') {
+                return;
+            }
+            if (window.__sbpFirestoreSyncEnabled) {
                 return;
             }
             if (window.__sbpDataPurge) {
@@ -51,19 +58,60 @@
     <pre id="output"></pre>
 
     <script>
-        const bookingData = JSON.parse(localStorage.getItem('bookingData')) || {
-            booked: [],
-            confirmed: [],
-            admitted: [],
-            cancelled: []
-        };
-        
-        const output = document.getElementById('output');
-        output.textContent = JSON.stringify(bookingData, null, 2);
-        
-        console.log('Booking Data:', bookingData);
-        console.log('Admitted Patients:', bookingData.admitted);
-        console.log('Admitted Count:', bookingData.admitted?.length || 0);
+        function renderCheckData() {
+            const bookingData = JSON.parse(localStorage.getItem('bookingData')) || {
+                booked: [],
+                confirmed: [],
+                admitted: [],
+                cancelled: []
+            };
+
+            const output = document.getElementById('output');
+            if (!output) {
+                return;
+            }
+
+            output.textContent = JSON.stringify(bookingData, null, 2);
+
+            console.log('Booking Data:', bookingData);
+            console.log('Admitted Patients:', bookingData.admitted);
+            console.log('Admitted Count:', bookingData.admitted ? bookingData.admitted.length : 0);
+        }
+
+        function startCheckDataPage() {
+            renderCheckData();
+        }
+
+        function ensureCheckDataReady() {
+            const ready = window.sbpStorageReadyPromise;
+            if (ready && typeof ready.then === 'function') {
+                ready.then(startCheckDataPage).catch(function(error) {
+                    console.warn('Unable to wait for Firestore sync before showing check data', error);
+                    startCheckDataPage();
+                });
+            } else {
+                startCheckDataPage();
+            }
+        }
+
+        function handleCheckDataStorageChange(key) {
+            if (!key || key === 'bookingData') {
+                renderCheckData();
+            }
+        }
+
+        ensureCheckDataReady();
+
+        window.addEventListener('storage', function(event) {
+            const key = event && typeof event.key === 'string' ? event.key : undefined;
+            handleCheckDataStorageChange(key);
+        });
+
+        window.addEventListener('sbpRemoteStorageSync', function(event) {
+            const detail = event && event.detail;
+            const key = detail && typeof detail.key === 'string' ? detail.key : undefined;
+            handleCheckDataStorageChange(key);
+        });
     </script>
 </body>
 </html>

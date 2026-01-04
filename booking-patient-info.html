@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ข้อมูลผู้ป่วยจองเตียง</title>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="firebase-init.js"></script>
+    <script src="firestore-sync.js"></script>
     <script src="access-control.js"></script>
         <link rel="stylesheet" href="styles.css"><!-- ถ้ามีไฟล์ CSS กลาง -->
         <style>
@@ -145,6 +149,9 @@
                 if (typeof window === 'undefined') {
                     return;
                 }
+                if (window.__sbpFirestoreSyncEnabled) {
+                    return;
+                }
                 if (window.__sbpDataPurge) {
                     window.__sbpDataPurge();
                     return;
@@ -261,37 +268,23 @@
                                     // SheetJS (xlsx) CDN
                                     </script>
                                     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-                                    <script>
-                                // ฟังก์ชันแปลงวันที่ yyyy-mm-dd เป็น Date (ไม่สนเวลา)
-                                function parseDateOnly(str) {
-                                    if (!str) return null;
-                                    const [y, m, d] = str.split('-');
-                                    return new Date(Number(y), Number(m)-1, Number(d));
-                                }
+                                                                        <script>
+                const bookingInfoFilters = {
+                    from: null,
+                    to: null
+                };
 
-                                // ฟังก์ชัน filter ตารางตามช่วงวันที่ admit
-                                function filterByDate() {
-                                    const from = document.getElementById('date-from').value;
-                                    const to = document.getElementById('date-to').value;
-                                    window._filterDateFrom = from;
-                                    window._filterDateTo = to;
-                                    loadBookingTable();
-                                }
-                        // ฟังก์ชันแปลงวันที่ yyyy-mm-dd เป็น Date (ไม่สนเวลา)
-                        function parseDateOnly(str) {
-                            if (!str) return null;
-                            const [y, m, d] = str.split('-');
-                            return new Date(Number(y), Number(m)-1, Number(d));
-                        }
+                function parseDateOnly(str) {
+                    if (!str) return null;
+                    const [y, m, d] = str.split('-');
+                    return new Date(Number(y), Number(m) - 1, Number(d));
+                }
 
-                        // ฟังก์ชัน filter ตารางตามช่วงวันที่ admit
-                        function filterByDate() {
-                            const from = document.getElementById('date-from').value;
-                            const to = document.getElementById('date-to').value;
-                            window._filterDateFrom = from;
-                            window._filterDateTo = to;
-                            loadBookingTable();
-                        }
+                function filterByDate() {
+                    bookingInfoFilters.from = document.getElementById('date-from').value || null;
+                    bookingInfoFilters.to = document.getElementById('date-to').value || null;
+                    loadBookingTable();
+                }
                 // แปลง Waiting Time เป็น wk และ d
                 function formatWaitingTime(val) {
                     if (!val) return '-';
@@ -317,71 +310,82 @@
         }
 
         // Store filtered patients globally for detail lookup
-        let _currentFilteredPatients = [];
-        function loadBookingTable() {
-            const stored = localStorage.getItem('bookingData');
-            let booked = [];
-            if (stored) {
-                try {
-                    const data = JSON.parse(stored);
-                    booked = data.booked || [];
-                } catch {}
-            }
-            const tbody = document.getElementById('patient-booking-tbody');
-            const noDataMsg = document.getElementById('no-data-msg');
-            tbody.innerHTML = '';
-            if (!booked.length) {
-                noDataMsg.style.display = 'block';
-                _currentFilteredPatients = [];
-                return;
-            } else {
-                noDataMsg.style.display = 'none';
-            }
-            // filter by admit_date if filter is set
-            let filtered = booked;
-            if (window._filterDateFrom || window._filterDateTo) {
-                filtered = booked.filter(p => {
-                    if (!p.admit_date) return false;
-                    const admit = parseDateOnly(p.admit_date);
-                    if (!admit) return false;
-                    let ok = true;
-                    if (window._filterDateFrom) {
-                        const from = parseDateOnly(window._filterDateFrom);
-                        if (admit < from) ok = false;
+                let _currentFilteredPatients = [];
+
+                function loadBookingTable() {
+                    const tbody = document.getElementById('patient-booking-tbody');
+                    const noDataMsg = document.getElementById('no-data-msg');
+                    if (!tbody || !noDataMsg) {
+                        return;
                     }
-                    if (window._filterDateTo) {
-                        const to = parseDateOnly(window._filterDateTo);
-                        if (admit > to) ok = false;
+
+                    let booked = [];
+                    const stored = localStorage.getItem('bookingData');
+                    if (stored) {
+                        try {
+                            const data = JSON.parse(stored);
+                            booked = data.booked || [];
+                        } catch (error) {
+                            console.warn('Unable to parse bookingData for patient info view', error);
+                        }
                     }
-                    return ok;
-                });
-            }
-            _currentFilteredPatients = filtered;
-            filtered.forEach((p, idx) => {
-                const tr = document.createElement('tr');
-                // ใช้ created_date ถ้ามี ถ้าไม่มีก็ fallback เป็น booking_date
-                const dateStr = p.created_date || p.booking_date || '';
-                tr.innerHTML = `
-                    <td style="padding:8px;text-align:center;">${formatDateTH(dateStr)}</td>
-                    <td style="padding:8px;text-align:center;">${p.patient_hn || '-'}</td>
-                    <td style="padding:8px;">${p.patient_name || '-'}</td>
-                    <td style="padding:8px;text-align:center;">${p.patient_age ? p.patient_age + ' ปี' : '-'}</td>
-                    <td style="padding:8px;text-align:center;">${p.patient_gender || '-'}</td>
-                    <td style="padding:8px;">${p.diagnosis || '-'}</td>
-                    <td style="padding:8px;text-align:center;">${formatDateTH(p.admit_date)}</td>
-                    <td style="padding:8px;text-align:center;">${p.bed_type === 'standard' ? 'เตียงสามัญ' : (p.bed_type === 'vip' ? 'ห้องพิเศษ' : '-')}</td>
-                    <td style="padding:8px;text-align:center;">${p.assigned_bed || '-'}</td>
-                    <td style="padding:8px;text-align:center;">${p.imc_status || '-'}</td>
-                    <td style="padding:8px;text-align:center;">${formatWaitingTime(p.waiting_time)}</td>
-                    <td style="padding:8px;text-align:center;">${p.lab_package || '-'}</td>
-                    <td style="padding:8px;text-align:center;">${p.appointment_channel || '-'}</td>
-                    <td style="padding:8px;text-align:center;">
-                        <button onclick="showBookingDetail(${idx})" style="padding:6px 14px;background:#4dd0e1;color:white;border:none;border-radius:6px;cursor:pointer;font-size:13px;">ดูรายละเอียด</button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
+
+                    tbody.innerHTML = '';
+                    if (!booked.length) {
+                        noDataMsg.style.display = 'block';
+                        _currentFilteredPatients = [];
+                        return;
+                    }
+
+                    noDataMsg.style.display = 'none';
+                    let filtered = booked;
+                    const fromFilter = bookingInfoFilters.from ? parseDateOnly(bookingInfoFilters.from) : null;
+                    const toFilter = bookingInfoFilters.to ? parseDateOnly(bookingInfoFilters.to) : null;
+
+                    if (fromFilter || toFilter) {
+                        filtered = booked.filter(function filterByWindow(patient) {
+                            if (!patient.admit_date) {
+                                return false;
+                            }
+                            const admit = parseDateOnly(patient.admit_date);
+                            if (!admit) {
+                                return false;
+                            }
+                            if (fromFilter && admit < fromFilter) {
+                                return false;
+                            }
+                            if (toFilter && admit > toFilter) {
+                                return false;
+                            }
+                            return true;
+                        });
+                    }
+
+                    _currentFilteredPatients = filtered;
+                    filtered.forEach(function renderRow(patient, idx) {
+                        const tr = document.createElement('tr');
+                        const dateStr = patient.created_date || patient.booking_date || '';
+                        tr.innerHTML = `
+                            <td style="padding:8px;text-align:center;">${formatDateTH(dateStr)}</td>
+                            <td style="padding:8px;text-align:center;">${patient.patient_hn || '-'}</td>
+                            <td style="padding:8px;">${patient.patient_name || '-'}</td>
+                            <td style="padding:8px;text-align:center;">${patient.patient_age ? patient.patient_age + ' ปี' : '-'}</td>
+                            <td style="padding:8px;text-align:center;">${patient.patient_gender || '-'}</td>
+                            <td style="padding:8px;">${patient.diagnosis || '-'}</td>
+                            <td style="padding:8px;text-align:center;">${formatDateTH(patient.admit_date)}</td>
+                            <td style="padding:8px;text-align:center;">${patient.bed_type === 'standard' ? 'เตียงสามัญ' : (patient.bed_type === 'vip' ? 'ห้องพิเศษ' : '-')}</td>
+                            <td style="padding:8px;text-align:center;">${patient.assigned_bed || '-'}</td>
+                            <td style="padding:8px;text-align:center;">${patient.imc_status || '-'}</td>
+                            <td style="padding:8px;text-align:center;">${formatWaitingTime(patient.waiting_time)}</td>
+                            <td style="padding:8px;text-align:center;">${patient.lab_package || '-'}</td>
+                            <td style="padding:8px;text-align:center;">${patient.appointment_channel || '-'}</td>
+                            <td style="padding:8px;text-align:center;">
+                                <button onclick="showBookingDetail(${idx})" style="padding:6px 14px;background:#4dd0e1;color:white;border:none;border-radius:6px;cursor:pointer;font-size:13px;">ดูรายละเอียด</button>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                }
 
         function showBookingDetail(idx) {
             const p = _currentFilteredPatients[idx];
@@ -411,7 +415,40 @@
         document.getElementById('booking-detail-modal').onclick = function() {
             closeBookingDetailModal();
         };
-        window.onload = loadBookingTable;
+                function startBookingInfoPage() {
+                    loadBookingTable();
+                }
+
+                function ensureBookingInfoReady() {
+                    const ready = window.sbpStorageReadyPromise;
+                    if (ready && typeof ready.then === 'function') {
+                        ready.then(startBookingInfoPage).catch(function(error) {
+                            console.warn('Unable to wait for Firestore sync before loading booking info table', error);
+                            startBookingInfoPage();
+                        });
+                    } else {
+                        startBookingInfoPage();
+                    }
+                }
+
+                function handleBookingInfoStorageChange(key) {
+                    if (!key || key === 'bookingData') {
+                        loadBookingTable();
+                    }
+                }
+
+                ensureBookingInfoReady();
+
+                window.addEventListener('storage', function(event) {
+                    const key = event && typeof event.key === 'string' ? event.key : undefined;
+                    handleBookingInfoStorageChange(key);
+                });
+
+                window.addEventListener('sbpRemoteStorageSync', function(event) {
+                    const detail = event && event.detail;
+                    const key = detail && typeof detail.key === 'string' ? detail.key : undefined;
+                    handleBookingInfoStorageChange(key);
+                });
                 // Export table to Excel
                 function exportToExcel() {
                     const table = document.getElementById('patient-booking-table');

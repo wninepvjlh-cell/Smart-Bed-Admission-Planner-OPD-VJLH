@@ -6,6 +6,10 @@
   <title>Dashboard - Smart Bed Admission Planner</title>
   <link rel="stylesheet" href="styles.css">
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  <script src="firebase-init.js"></script>
+  <script src="firestore-sync.js"></script>
   <script src="access-control.js"></script>
 </head>
 <body>
@@ -350,12 +354,29 @@
         });
       }
     }
-    document.addEventListener('DOMContentLoaded', function() {
+    function startImcChartLoop() {
       renderIMCRatioChart();
       setInterval(renderIMCRatioChart, 5000);
+    }
+    document.addEventListener('DOMContentLoaded', function() {
+      const ready = window.sbpStorageReadyPromise;
+      if (ready && typeof ready.then === 'function') {
+        ready.then(startImcChartLoop).catch(function(error) {
+          console.warn('Unable to wait for Firestore sync before drawing IMC chart', error);
+          startImcChartLoop();
+        });
+      } else {
+        startImcChartLoop();
+      }
     });
     window.addEventListener('storage', function(e) {
       if (e.key === 'bookingData') renderIMCRatioChart();
+    });
+    window.addEventListener('sbpRemoteStorageSync', function(event) {
+      const detail = event && event.detail;
+      if (!detail || !detail.key || detail.key === 'bookingData') {
+        renderIMCRatioChart();
+      }
     });
   </script>
 
@@ -422,22 +443,43 @@
         el.title = '';
       }
     }
-    updateFemaleStandardFloor2();
-    updateMaleStandardFloor2();
-    updateMaleSpecialFloor2();
-    updateFemaleSpecialFloor2();
-    updateActiveBedFloor2();
-    setInterval(updateFemaleStandardFloor2, 5000);
-    setInterval(updateMaleStandardFloor2, 5000);
-    setInterval(updateMaleSpecialFloor2, 5000);
-    setInterval(updateFemaleSpecialFloor2, 5000);
-    setInterval(updateActiveBedFloor2, 5000);
+    function startIpdCounters() {
+      updateFemaleStandardFloor2();
+      updateMaleStandardFloor2();
+      updateMaleSpecialFloor2();
+      updateFemaleSpecialFloor2();
+      updateActiveBedFloor2();
+      setInterval(updateFemaleStandardFloor2, 5000);
+      setInterval(updateMaleStandardFloor2, 5000);
+      setInterval(updateMaleSpecialFloor2, 5000);
+      setInterval(updateFemaleSpecialFloor2, 5000);
+      setInterval(updateActiveBedFloor2, 5000);
+    }
+
+    const storageReadyForCounters = window.sbpStorageReadyPromise;
+    if (storageReadyForCounters && typeof storageReadyForCounters.then === 'function') {
+      storageReadyForCounters.then(startIpdCounters).catch(function(error) {
+        console.warn('Unable to wait for Firestore sync before updating IPD counters', error);
+        startIpdCounters();
+      });
+    } else {
+      startIpdCounters();
+    }
     window.addEventListener('storage', function(e) {
       if (e.key === 'ipd_female_standard_floor2') updateFemaleStandardFloor2();
       if (e.key === 'ipd_male_standard_floor2') updateMaleStandardFloor2();
       if (e.key === 'ipd_male_special_floor2') updateMaleSpecialFloor2();
       if (e.key === 'ipd_female_special_floor2') updateFemaleSpecialFloor2();
       if (e.key === 'ipd_active_beds_floor2') updateActiveBedFloor2();
+    });
+    window.addEventListener('sbpRemoteStorageSync', function(event) {
+      const detail = event && event.detail;
+      const key = detail && detail.key;
+      if (!key || key === 'ipd_female_standard_floor2') updateFemaleStandardFloor2();
+      if (!key || key === 'ipd_male_standard_floor2') updateMaleStandardFloor2();
+      if (!key || key === 'ipd_male_special_floor2') updateMaleSpecialFloor2();
+      if (!key || key === 'ipd_female_special_floor2') updateFemaleSpecialFloor2();
+      if (!key || key === 'ipd_active_beds_floor2') updateActiveBedFloor2();
     });
   </script>
 

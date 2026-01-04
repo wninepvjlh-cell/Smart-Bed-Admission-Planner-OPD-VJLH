@@ -2,6 +2,10 @@
 <html>
 <head>
     <title>Debug Data</title>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="firebase-init.js"></script>
+    <script src="firestore-sync.js"></script>
     <style>
         body { font-family: monospace; padding: 20px; }
         pre { background: #f5f5f5; padding: 15px; border-radius: 5px; }
@@ -12,6 +16,9 @@
     <script>
         (function runOneTimePatientDataPurge() {
             if (typeof window === 'undefined') {
+                return;
+            }
+            if (window.__sbpFirestoreSyncEnabled) {
                 return;
             }
             if (window.__sbpDataPurge) {
@@ -74,40 +81,83 @@
     </div>
     
     <script>
-        const bookingData = JSON.parse(localStorage.getItem('bookingData')) || {};
-        document.getElementById('bookingData').textContent = JSON.stringify(bookingData, null, 2);
-        
-        // Filter VIP admitted patients
-        const vipPatients = (bookingData.admitted || []).filter(p => 
-            ['V1','V2','V3','V4','V5','V6'].includes(p.assigned_bed)
-        );
-        document.getElementById('vipPatients').textContent = vipPatients.length > 0 
-            ? JSON.stringify(vipPatients, null, 2) 
-            : 'ไม่มีผู้ป่วย VIP ที่ Admit แล้ว';
-        
-        // Filter VIP booked patients
-        const vipBooked = [...(bookingData.booked || []), ...(bookingData.confirmed || [])].filter(p => 
-            p.bed_type === 'special' || p.bed_type === 'vip' || p.bed_type === 'พิเศษ'
-        );
-        document.getElementById('vipBooked').textContent = vipBooked.length > 0 
-            ? JSON.stringify(vipBooked, null, 2) 
-            : 'ไม่มีการจองห้องพิเศษ';
-        
-        // Filter patients with discharge date 2025-12-28
-        const discharge28 = (bookingData.admitted || []).filter(p => 
-            p.expected_discharge_date === '2025-12-28'
-        );
-        document.getElementById('discharge28').textContent = discharge28.length > 0 
-            ? JSON.stringify(discharge28, null, 2) 
-            : 'ไม่มีผู้ป่วยที่จำหน่ายวันที่ 28';
-        
-        // All patients
-        const allPatients = [
-            ...(bookingData.admitted || []),
-            ...(bookingData.booked || []),
-            ...(bookingData.confirmed || [])
-        ];
-        document.getElementById('allPatients').textContent = `จำนวนทั้งหมด: ${allPatients.length} คน\n\n` + JSON.stringify(allPatients, null, 2);
+        function renderDebugData() {
+            const bookingData = JSON.parse(localStorage.getItem('bookingData')) || {};
+            const bookingEl = document.getElementById('bookingData');
+            const vipAdmitEl = document.getElementById('vipPatients');
+            const vipBookedEl = document.getElementById('vipBooked');
+            const dischargeEl = document.getElementById('discharge28');
+            const allPatientsEl = document.getElementById('allPatients');
+
+            if (!bookingEl || !vipAdmitEl || !vipBookedEl || !dischargeEl || !allPatientsEl) {
+                return;
+            }
+
+            bookingEl.textContent = JSON.stringify(bookingData, null, 2);
+
+            const vipPatients = (bookingData.admitted || []).filter(function(patient) {
+                return ['V1', 'V2', 'V3', 'V4', 'V5', 'V6'].includes(patient.assigned_bed);
+            });
+            vipAdmitEl.textContent = vipPatients.length > 0
+                ? JSON.stringify(vipPatients, null, 2)
+                : 'ไม่มีผู้ป่วย VIP ที่ Admit แล้ว';
+
+            const vipBooked = [...(bookingData.booked || []), ...(bookingData.confirmed || [])].filter(function(patient) {
+                return patient.bed_type === 'special' || patient.bed_type === 'vip' || patient.bed_type === 'พิเศษ';
+            });
+            vipBookedEl.textContent = vipBooked.length > 0
+                ? JSON.stringify(vipBooked, null, 2)
+                : 'ไม่มีการจองห้องพิเศษ';
+
+            const discharge28 = (bookingData.admitted || []).filter(function(patient) {
+                return patient.expected_discharge_date === '2025-12-28';
+            });
+            dischargeEl.textContent = discharge28.length > 0
+                ? JSON.stringify(discharge28, null, 2)
+                : 'ไม่มีผู้ป่วยที่จำหน่ายวันที่ 28';
+
+            const allPatients = [
+                ...(bookingData.admitted || []),
+                ...(bookingData.booked || []),
+                ...(bookingData.confirmed || [])
+            ];
+            allPatientsEl.textContent = `จำนวนทั้งหมด: ${allPatients.length} คน\n\n` + JSON.stringify(allPatients, null, 2);
+        }
+
+        function startDebugPage() {
+            renderDebugData();
+        }
+
+        function ensureDebugPageReady() {
+            const ready = window.sbpStorageReadyPromise;
+            if (ready && typeof ready.then === 'function') {
+                ready.then(startDebugPage).catch(function(error) {
+                    console.warn('Unable to wait for Firestore sync before rendering debug data', error);
+                    startDebugPage();
+                });
+            } else {
+                startDebugPage();
+            }
+        }
+
+        function handleDebugStorageChange(key) {
+            if (!key || key === 'bookingData') {
+                renderDebugData();
+            }
+        }
+
+        ensureDebugPageReady();
+
+        window.addEventListener('storage', function(event) {
+            const key = event && typeof event.key === 'string' ? event.key : undefined;
+            handleDebugStorageChange(key);
+        });
+
+        window.addEventListener('sbpRemoteStorageSync', function(event) {
+            const detail = event && event.detail;
+            const key = detail && typeof detail.key === 'string' ? detail.key : undefined;
+            handleDebugStorageChange(key);
+        });
     </script>
 </body>
 </html>

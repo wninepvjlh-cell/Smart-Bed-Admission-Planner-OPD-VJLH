@@ -2,6 +2,9 @@
   if (typeof window === 'undefined') {
     return;
   }
+  if (window.__sbpFirestoreSyncEnabled) {
+    return;
+  }
   if (window.__sbpDataPurge) {
     window.__sbpDataPurge();
     return;
@@ -221,6 +224,53 @@ let bookingStorage = {
   booked: [],
   admitted: []
 };
+
+function refreshBookingStorageFromLocal() {
+  const stored = localStorage.getItem('bookingData');
+  if (!stored) {
+    bookingStorage = { booked: [], admitted: [] };
+    return;
+  }
+  try {
+    bookingStorage = JSON.parse(stored) || { booked: [], admitted: [] };
+  } catch (error) {
+    console.warn('Unable to parse bookingData from localStorage', error);
+    bookingStorage = { booked: [], admitted: [] };
+  }
+}
+
+function initializeBookingStorageSync() {
+  refreshBookingStorageFromLocal();
+}
+
+function ensureBookingStorageReady() {
+  const ready = window.sbpStorageReadyPromise;
+  if (ready && typeof ready.then === 'function') {
+    ready.then(initializeBookingStorageSync).catch(function(error) {
+      console.warn('Unable to prepare booking storage from Firestore sync', error);
+      initializeBookingStorageSync();
+    });
+  } else {
+    initializeBookingStorageSync();
+  }
+}
+
+function handleBookingStorageBroadcast(key) {
+  if (!key || key === 'bookingData') {
+    refreshBookingStorageFromLocal();
+  }
+}
+
+ensureBookingStorageReady();
+
+window.addEventListener('storage', function(event) {
+  handleBookingStorageBroadcast(event && typeof event.key === 'string' ? event.key : undefined);
+});
+
+window.addEventListener('sbpRemoteStorageSync', function(event) {
+  const detail = event && event.detail;
+  handleBookingStorageBroadcast(detail && typeof detail.key === 'string' ? detail.key : undefined);
+});
 
 // Load patient data when HN is entered
 function loadPatientData(hn) {
@@ -637,18 +687,6 @@ function updateWaitingListDisplay() {
   }));
   window.dispatchEvent(new Event('storage'));
 }
-
-// Load data from localStorage on page load
-function loadStoredBookingData() {
-  const stored = localStorage.getItem('bookingData');
-  if (stored) {
-    const data = JSON.parse(stored);
-    bookingStorage = data;
-  }
-}
-
-// Initialize on page load
-window.addEventListener('load', loadStoredBookingData);
 
 // Export functions to global scope for HTML inline event handlers
 window.loadPatientData = loadPatientData;

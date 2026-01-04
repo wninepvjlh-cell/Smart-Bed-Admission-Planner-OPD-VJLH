@@ -11,6 +11,36 @@ const pieColors = [
   '#b2ebf2', '#4dd0e1', '#80cbc4', '#26c6da', '#0097a7', '#43a047'
 ];
 
+const bookingDataListeners = [];
+
+function notifyBookingDataListeners(key) {
+  if (key && key !== 'bookingData') {
+    return;
+  }
+  bookingDataListeners.forEach(function(listener) {
+    try {
+      listener();
+    } catch (error) {
+      console.warn('Dashboard booking listener failed', error);
+    }
+  });
+}
+
+function onBookingDataChange(callback) {
+  if (typeof callback === 'function') {
+    bookingDataListeners.push(callback);
+  }
+}
+
+window.addEventListener('storage', function(event) {
+  notifyBookingDataListeners(event && typeof event.key === 'string' ? event.key : undefined);
+});
+
+window.addEventListener('sbpRemoteStorageSync', function(event) {
+  const detail = event && event.detail;
+  notifyBookingDataListeners(detail && typeof detail.key === 'string' ? detail.key : undefined);
+});
+
 function getAdmittedPatientsFloor2() {
   const bookingData = JSON.parse(localStorage.getItem('bookingData')) || { admitted: [] };
   return (bookingData.admitted || []).filter(p => p.floor === 'floor2' && p.admit_status === 'admitted');
@@ -111,9 +141,7 @@ function renderPieChart() {
 
 renderPieChart();
 setInterval(renderPieChart, 5000);
-window.addEventListener('storage', function(e) {
-  if (e.key === 'bookingData') renderPieChart();
-});
+onBookingDataChange(renderPieChart);
 
 function getBookingWaitingTimeData() {
   const bookingData = JSON.parse(localStorage.getItem('bookingData')) || { booked: [] };
@@ -316,11 +344,9 @@ renderWaitingTimeLineChart();
 renderAppointmentChannelBarChart();
 setInterval(renderWaitingTimeLineChart, 5000);
 setInterval(renderAppointmentChannelBarChart, 5000);
-window.addEventListener('storage', function(e) {
-  if (e.key === 'bookingData') {
-    renderWaitingTimeLineChart();
-    renderAppointmentChannelBarChart();
-  }
+onBookingDataChange(function() {
+  renderWaitingTimeLineChart();
+  renderAppointmentChannelBarChart();
 });
 
 function getBookingPatients() {
@@ -370,9 +396,7 @@ function renderBookingByDisease() {
 
 renderBookingByDisease();
 setInterval(renderBookingByDisease, 5000);
-window.addEventListener('storage', function(e) {
-  if (e.key === 'bookingData') renderBookingByDisease();
-});
+onBookingDataChange(renderBookingByDisease);
 
 function updateDashboardDateTime() {
   const now = new Date();

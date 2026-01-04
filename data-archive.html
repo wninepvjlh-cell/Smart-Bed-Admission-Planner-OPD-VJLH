@@ -4,6 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>คลังข้อมูล - Smart Bed Admission Planner</title>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  <script src="firebase-init.js"></script>
+  <script src="firestore-sync.js"></script>
   <style>
     * { margin:0; padding:0; box-sizing:border-box; }
     body { font-family: 'Sarabun', sans-serif; background: linear-gradient(135deg, #e0f7fa 0%, #e8f5e9 100%); min-height: 100vh; }
@@ -55,6 +59,9 @@
     <script>
       (function runOneTimePatientDataPurge() {
         if (typeof window === 'undefined') {
+          return;
+        }
+        if (window.__sbpFirestoreSyncEnabled) {
           return;
         }
         if (window.__sbpDataPurge) {
@@ -373,6 +380,8 @@
 
     // Duplicate logout function removed
 
+    let archiveLastAction = 'none';
+
     function getAllData() {
       const bookingData = JSON.parse(localStorage.getItem('bookingData')) || {
         booked: [],
@@ -452,6 +461,7 @@
     }
 
     function searchData() {
+      archiveLastAction = 'search';
       const searchHNName = document.getElementById('searchHNName').value.toLowerCase();
       const searchStatus = document.getElementById('searchStatus').value;
       const searchDateFrom = document.getElementById('searchDateFrom').value;
@@ -517,6 +527,7 @@
     }
 
     function showAllData() {
+      archiveLastAction = 'all';
       const allData = getAllData();
       
       // Sort by admit_date descending (most recent first)
@@ -670,6 +681,7 @@
     }
 
     function clearSearch() {
+      archiveLastAction = 'none';
       document.getElementById('searchHNName').value = '';
       document.getElementById('searchStatus').value = '';
       document.getElementById('searchDateFrom').value = '';
@@ -691,6 +703,49 @@
       `;
       document.getElementById('resultCount').textContent = '0';
     }
+
+    function refreshArchiveView() {
+      if (archiveLastAction === 'search') {
+        searchData();
+      } else if (archiveLastAction === 'all') {
+        showAllData();
+      }
+    }
+
+    function startArchivePage() {
+      refreshArchiveView();
+    }
+
+    function ensureArchivePageReady() {
+      const ready = window.sbpStorageReadyPromise;
+      if (ready && typeof ready.then === 'function') {
+        ready.then(startArchivePage).catch(function(error) {
+          console.warn('Unable to wait for Firestore sync before initializing archive view', error);
+          startArchivePage();
+        });
+      } else {
+        startArchivePage();
+      }
+    }
+
+    function handleArchiveStorageChange(key) {
+      if (!key || key === 'bookingData') {
+        refreshArchiveView();
+      }
+    }
+
+    ensureArchivePageReady();
+
+    window.addEventListener('storage', function(event) {
+      const key = event && typeof event.key === 'string' ? event.key : undefined;
+      handleArchiveStorageChange(key);
+    });
+
+    window.addEventListener('sbpRemoteStorageSync', function(event) {
+      const detail = event && event.detail;
+      const key = detail && typeof detail.key === 'string' ? detail.key : undefined;
+      handleArchiveStorageChange(key);
+    });
   </script>
 </body>
 </html>

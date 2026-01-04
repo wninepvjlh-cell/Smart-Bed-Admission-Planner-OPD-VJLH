@@ -2,6 +2,9 @@
   if (typeof window === 'undefined') {
     return;
   }
+  if (window.__sbpFirestoreSyncEnabled) {
+    return;
+  }
   if (window.__sbpDataPurge) {
     window.__sbpDataPurge();
     return;
@@ -1204,16 +1207,27 @@ function confirmAdmitPatient() {
   }
 }
 
-// Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
+function runWhenDomReady(callback) {
+  if (document.readyState === 'loading') {
+    const handler = function() {
+      document.removeEventListener('DOMContentLoaded', handler);
+      callback();
+    };
+    document.addEventListener('DOMContentLoaded', handler);
+  } else {
+    callback();
+  }
+}
+
+function initializeRegistryPage() {
   displayBookingList();
   displayConfirmedList();
   const importInput = document.getElementById('booking-import-file');
   if (importInput) {
     importInput.addEventListener('change', handleBookingImport);
   }
-  
-  // Auto-refresh every 10 seconds
+
   setInterval(() => {
     const currentTab = document.getElementById('tab-booking-content').style.display === 'block' ? 'booking' : 'confirmed';
     if (currentTab === 'booking') {
@@ -1222,16 +1236,48 @@ document.addEventListener('DOMContentLoaded', function() {
       displayConfirmedList();
     }
   }, 10000);
+}
+
+function bootstrapRegistryPage() {
+  runWhenDomReady(initializeRegistryPage);
+}
+
+function ensureRegistryPageReady() {
+  const ready = window.sbpStorageReadyPromise;
+  if (ready && typeof ready.then === 'function') {
+    ready.then(bootstrapRegistryPage).catch(function(error) {
+      console.warn('Unable to wait for Firestore sync before rendering registry', error);
+      bootstrapRegistryPage();
+    });
+  } else {
+    bootstrapRegistryPage();
+  }
+}
+
+function handleRegistryStorageUpdate(key) {
+  if (key && key !== 'bookingData') {
+    return;
+  }
+  const bookingTab = document.getElementById('tab-booking-content');
+  const confirmedTab = document.getElementById('tab-confirmed-content');
+  if (!bookingTab || !confirmedTab) {
+    return;
+  }
+  const currentTab = bookingTab.style.display === 'block' ? 'booking' : 'confirmed';
+  if (currentTab === 'booking') {
+    displayBookingList();
+  } else {
+    displayConfirmedList();
+  }
+}
+
+ensureRegistryPageReady();
+
+window.addEventListener('storage', function(event) {
+  handleRegistryStorageUpdate(event && typeof event.key === 'string' ? event.key : undefined);
 });
 
-// Listen for storage changes
-window.addEventListener('storage', function(e) {
-  if (e.key === 'bookingData') {
-    const currentTab = document.getElementById('tab-booking-content').style.display === 'block' ? 'booking' : 'confirmed';
-    if (currentTab === 'booking') {
-      displayBookingList();
-    } else {
-      displayConfirmedList();
-    }
-  }
+window.addEventListener('sbpRemoteStorageSync', function(event) {
+  const detail = event && event.detail;
+  handleRegistryStorageUpdate(detail && typeof detail.key === 'string' ? detail.key : undefined);
 });

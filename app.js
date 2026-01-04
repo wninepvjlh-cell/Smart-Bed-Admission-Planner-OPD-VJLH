@@ -2,6 +2,9 @@
   if (typeof window === 'undefined') {
     return;
   }
+  if (window.__sbpFirestoreSyncEnabled) {
+    return;
+  }
   if (window.__sbpDataPurge) {
     window.__sbpDataPurge();
     return;

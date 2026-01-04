@@ -2,6 +2,9 @@
   if (typeof window === 'undefined') {
     return;
   }
+  if (window.__sbpFirestoreSyncEnabled) {
+    return;
+  }
   if (window.__sbpDataPurge) {
     window.__sbpDataPurge();
     return;
@@ -393,7 +396,19 @@ function calculatePredictions() {
 }
 
 // Initialize on page load
-document.addEventListener('DOMContentLoaded', function() {
+function runWhenDomReady(callback) {
+  if (document.readyState === 'loading') {
+    const handler = function() {
+      document.removeEventListener('DOMContentLoaded', handler);
+      callback();
+    };
+    document.addEventListener('DOMContentLoaded', handler);
+  } else {
+    callback();
+  }
+}
+
+function initializePredictPage() {
   calculatePredictions();
   
   // Refresh every 30 seconds to sync with IPD updates
@@ -420,11 +435,36 @@ document.addEventListener('DOMContentLoaded', function() {
       calculatePredictions();
     }
   });
+  window.addEventListener('sbpRemoteStorageSync', function(event) {
+    const detail = event && event.detail;
+    if (!detail || !detail.key || detail.key === 'bookingData') {
+      console.log('Firestore sync - refreshing predictions');
+      calculatePredictions();
+    }
+  });
   
   // Set min date for AI prediction to today
   const today = new Date().toISOString().split('T')[0];
   document.getElementById('ai-admit-date').setAttribute('min', today);
-});
+}
+
+function bootstrapPredictPage() {
+  runWhenDomReady(initializePredictPage);
+}
+
+function ensurePredictPageReady() {
+  const ready = window.sbpStorageReadyPromise;
+  if (ready && typeof ready.then === 'function') {
+    ready.then(bootstrapPredictPage).catch(function(error) {
+      console.warn('Unable to wait for Firestore sync before loading predictions', error);
+      bootstrapPredictPage();
+    });
+  } else {
+    bootstrapPredictPage();
+  }
+}
+
+ensurePredictPageReady();
 
 // Check availability for specific date
 // Uses live data from both booking system and IPD ward

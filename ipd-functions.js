@@ -2,6 +2,9 @@
   if (typeof window === 'undefined') {
     return;
   }
+  if (window.__sbpFirestoreSyncEnabled) {
+    return;
+  }
   if (window.__sbpDataPurge) {
     window.__sbpDataPurge();
     return;
@@ -291,11 +294,21 @@ function changeActiveBedsCalendarMonth(offset) {
   renderActiveBedsCalendarForFloor(state.floor || 2);
 }
 
-window.addEventListener('storage', function(e) {
-  if (e.key === 'bookingData') {
-    const state = ensureActiveBedsCalendarState();
-    renderActiveBedsCalendarForFloor(state.floor || 2);
+function handleIPDBookingStorageUpdate(key) {
+  if (key && key !== 'bookingData') {
+    return;
   }
+  const state = ensureActiveBedsCalendarState();
+  renderActiveBedsCalendarForFloor(state.floor || 2);
+}
+
+window.addEventListener('storage', function(event) {
+  handleIPDBookingStorageUpdate(event && typeof event.key === 'string' ? event.key : undefined);
+});
+
+window.addEventListener('sbpRemoteStorageSync', function(event) {
+  const detail = event && event.detail;
+  handleIPDBookingStorageUpdate(detail && typeof detail.key === 'string' ? detail.key : undefined);
 });
 
 function showIPDFloor(floor) {
@@ -1399,12 +1412,42 @@ function createBedElement(bedId, patient, bedType) {
   return card;
 }
 
-// Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
+function runWhenDomReady(callback) {
+  if (document.readyState === 'loading') {
+    const handler = function() {
+      document.removeEventListener('DOMContentLoaded', handler);
+      callback();
+    };
+    document.addEventListener('DOMContentLoaded', handler);
+  } else {
+    callback();
+  }
+}
+
+function initializeIPDPage() {
   window.showIPDFloor = showIPDFloor;
   window.loadIPDFloor = loadIPDFloor;
   showIPDFloor(1);
-});
+}
+
+function bootstrapIPDPage() {
+  runWhenDomReady(initializeIPDPage);
+}
+
+function ensureIPDPageReady() {
+  const ready = window.sbpStorageReadyPromise;
+  if (ready && typeof ready.then === 'function') {
+    ready.then(bootstrapIPDPage).catch(function(error) {
+      console.warn('Unable to wait for Firestore sync before rendering IPD view', error);
+      bootstrapIPDPage();
+    });
+  } else {
+    bootstrapIPDPage();
+  }
+}
+
+ensureIPDPageReady();
 
 // Close modal when clicking outside
 document.addEventListener('click', function(event) {
