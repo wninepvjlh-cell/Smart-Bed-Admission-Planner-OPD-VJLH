@@ -1207,7 +1207,6 @@ function confirmAdmitPatient() {
   }
 }
 
-document.addEventListener('DOMContentLoaded', function() {
 function runWhenDomReady(callback) {
   if (document.readyState === 'loading') {
     const handler = function() {
@@ -1280,5 +1279,4 @@ window.addEventListener('storage', function(event) {
 window.addEventListener('sbpRemoteStorageSync', function(event) {
   const detail = event && event.detail;
   handleRegistryStorageUpdate(detail && typeof detail.key === 'string' ? detail.key : undefined);
-});
 });
