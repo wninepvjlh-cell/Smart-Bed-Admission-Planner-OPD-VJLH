@@ -1,0 +1,448 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - Smart Bed Admission Planner</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="access-control.js"></script>
+</head>
+<body>
+  <button type="button" id="logoutBtn" class="logout-button">Logout</button>
+  <header style="background: linear-gradient(135deg, #80deea 0%, #81c784 100%); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);">
+    <div style="padding: 24px; text-align: center;">
+      <h1 style="font-size: 2.2rem; font-weight: 600; color: white; margin: 0;">Smart Bed Admission Planner</h1>
+      <div style="font-size: 1.2rem; font-weight: 400; color: white;">โรงพยาบาลเวชชารักษ์ ลำปาง</div>
+      <div style="font-size: 1rem; margin-top: 8px; color: rgba(255,255,255,0.9);">เวชศาสตร์ฟื้นฟู - งานการพยาบาลผู้ป่วยนอก</div>
+    </div>
+  </header>
+  <nav style="background: white; padding: 16px 24px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); width: 100%; margin-bottom: 0;">
+    <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+      <div style="display:flex; gap:12px; flex-wrap:wrap; justify-content:center; flex:1 1 auto;">
+        <a class="nav-button" href="dashboard.html" style="padding: 10px 20px; border-radius: 8px; background: linear-gradient(135deg,#4dd0e1 0%,#26c6da 100%); font-size: 15px; font-weight: 600; color: white; text-decoration: none; box-shadow: 0 4px 12px rgba(77,208,225,0.25);">Dashboard</a>
+        <a class="nav-button" href="predict.html" style="padding: 10px 20px; border-radius: 8px; background: white; font-size: 15px; font-weight: 500; color: #00796b;">คาดการณ์วัน Admit เร็วสุด</a>
+        <div class="nav-dropdown" style="display:inline-block;position:relative;">
+          <button type="button" class="nav-button" id="bookingDropdownBtn" style="padding: 10px 20px; border-radius: 8px; background: white; font-size: 15px; font-weight: 500; color: #00796b; cursor:pointer;">จองเตียง Admit ▼</button>
+          <div class="dropdown-content" id="bookingDropdownContent" style="display:none;position:absolute;left:0;top:100%;background:white;min-width:220px;box-shadow:0 2px 8px rgba(0,0,0,0.12);border-radius:8px;z-index:10;">
+            <a href="booking-patient-info.html" style="display:block;padding:10px 20px;color:#00796b;text-decoration:none;font-size:15px;border-radius:8px 8px 0 0;">ข้อมูลผู้ป่วยจองเตียง</a>
+          </div>
+        </div>
+        <a class="nav-button" href="registry.html" style="padding: 10px 20px; border-radius: 8px; background: white; font-size: 15px; font-weight: 500; color: #00796b;">ทะเบียนจองเตียง</a>
+        <a class="nav-button" href="ipd.html" style="padding: 10px 20px; border-radius: 8px; background: white; font-size: 15px; font-weight: 500; color: #00796b;">หอผู้ป่วยใน(IPD)</a>
+        <a class="nav-button" href="data-archive.html" style="padding: 10px 20px; border-radius: 8px; background: white; font-size: 15px; font-weight: 500; color: #00796b;">คลังข้อมูล</a>
+      </div>
+    </div>
+  </nav>
+  <div class="app-container">
+    <main style="padding:24px;background:linear-gradient(135deg,#e0f7fa 0%,#e8f5e9 50%,#f1f8e9 100%);">
+      <div style="max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:24px;">
+        <section style="background:linear-gradient(135deg,#b2ebf2 0%,#81c784 100%);border-radius:24px;padding:24px 28px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;box-shadow:0 6px 20px rgba(129,199,132,0.18);">
+          <div>
+            <h2 style="margin:0;font-size:28px;color:#004d40;font-weight:700;display:flex;align-items:center;gap:14px;">
+              <span style="display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:50%;background:rgba(0,150,136,0.08);">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00796b" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="3" width="18" height="18" rx="4"/>
+                  <path d="M7 15.5 10.5 12l2.5 2 4-4.5"/>
+                  <path d="M7 7h0.01"/>
+                  <path d="M12 7h0.01"/>
+                  <path d="M17 7h0.01"/>
+                </svg>
+              </span>
+              Dashboard
+            </h2>
+            <p style="margin:8px 0 0 0;color:#004d40;font-weight:500;">ติดตามสถานะเตียง IPD ชั้น 2 และภาพรวมการจองเตียง</p>
+          </div>
+          <div style="padding:16px 20px;min-width:220px;text-align:center;">
+            <div style="font-size:0.85rem;font-weight:600;color:#00796b;">อัปเดตล่าสุด</div>
+            <div id="dashboardDateTime" style="margin-top:6px;font-size:0.95rem;font-weight:700;color:#004d40;">-</div>
+          </div>
+        </section>
+
+        <section style="display:flex;flex-wrap:wrap;gap:16px;">
+          <div style="flex:1 1 260px;background:#fff;border-radius:20px;box-shadow:0 4px 16px rgba(0,0,0,0.08);padding:20px;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;color:#009688;font-weight:600;font-size:1.4rem;">
+              <span style="display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;background:rgba(0,150,136,0.08);">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#009688" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="11" width="18" height="6" rx="2"/>
+                  <path d="M6 11V9a3 3 0 0 1 3-3h6a3 3 0 0 1 3 3v2"/>
+                  <path d="M5 17v2.5"/>
+                  <path d="M19 17v2.5"/>
+                </svg>
+              </span>
+              <span>Active Beds</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;font-size:1.6rem;font-weight:700;color:#00695c;">
+              <span id="dashboard-active-bed-floor2">-</span>
+              <span style="font-size:1rem;font-weight:500;color:#00796b;">/ 18 เตียง</span>
+            </div>
+          </div>
+        </section>
+
+        <section style="background:#fff;border-radius:20px;box-shadow:0 4px 16px rgba(0,0,0,0.06);padding:24px;">
+          <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px;">
+            <h3 style="margin:0;font-size:1.4rem;color:#006064;font-weight:700;display:flex;align-items:center;gap:10px;">
+              <span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:rgba(0,150,136,0.1);">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#009688" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="4" y="9" width="16" height="9" rx="2" ry="2"/>
+                  <path d="M8 9V7a4 4 0 0 1 8 0v2"/>
+                  <path d="M6 18v2"/>
+                  <path d="M18 18v2"/>
+                  <line x1="10" y1="13" x2="14" y2="13"/>
+                  <line x1="12" y1="11" x2="12" y2="15"/>
+                </svg>
+              </span>
+              หอผู้ป่วยในชั้น2
+            </h3>
+            <p style="margin:0;font-size:0.85rem;color:#00796b;">ข้อมูลอัปเดตอัตโนมัติทุก 5 วินาที</p>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:16px;">
+            <div style="background:#fff;border-radius:14px;box-shadow:0 2px 8px rgba(0,180,180,0.08);padding:16px 14px 12px 14px;flex:1 1 320px;max-width:520px;border-bottom:4px solid;border-image:linear-gradient(90deg,#b2ebf2 0%,#4dd0e1 50%,#80cbc4 100%) 1;display:flex;flex-direction:column;align-items:flex-start;">
+              <div style="display:flex;align-items:center;gap:7px;margin-bottom:8px;">
+                <svg width="18" height="18" viewBox="0 0 32 32" fill="none" stroke="url(#bedLinear1)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;">
+                  <defs>
+                    <linearGradient id="bedLinear1" x1="0" y1="0" x2="32" y2="0" gradientUnits="userSpaceOnUse">
+                      <stop stop-color="#b2ebf2"/>
+                      <stop offset="0.5" stop-color="#4dd0e1"/>
+                      <stop offset="1" stop-color="#80cbc4"/>
+                    </linearGradient>
+                  </defs>
+                  <rect x="4" y="16" width="24" height="8" rx="3"/>
+                  <rect x="7" y="10" width="18" height="7" rx="2.5"/>
+                  <line x1="4" y1="24" x2="28" y2="24"/>
+                </svg>
+                <span style="font-size:0.95rem;font-weight:600;color:#0097a7;letter-spacing:0.5px;">เตียงสามัญ</span>
+              </div>
+              <div style="display:flex;gap:10px;align-items:center;">
+                <div style="display:flex;flex-direction:column;align-items:center;gap:2px;font-size:1.1rem;font-weight:600;color:#0097a7;background:#e0f7fa;border-radius:6px;padding:2px 7px 2px 5px;min-width:40px;">
+                  <div style="display:flex;flex-direction:column;flex-grow:1;justify-content:flex-end;align-items:center;height:40px;">
+                    <div style="display:flex;align-items:center;gap:4px;">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="#4dd0e1" style="vertical-align:middle;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                      <span id="dashboard-male-standard-floor2" style="color:#0097a7;">-</span>
+                    </div>
+                    <span style="font-size:0.8rem;color:#0097a7;margin-top:auto;margin-bottom:0;align-self:flex-end;">(ชาย)</span>
+                  </div>
+                </div>
+                <div style="display:flex;flex-direction:column;align-items:center;gap:2px;font-size:1.1rem;font-weight:600;color:#43a047;background:#e8f5e9;border-radius:6px;padding:2px 7px 2px 5px;min-width:40px;">
+                  <div style="display:flex;flex-direction:column;flex-grow:1;justify-content:flex-end;align-items:center;height:40px;">
+                    <div style="display:flex;align-items:center;gap:4px;">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="#43a047" style="vertical-align:middle;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm6 8c0-2.21-3.58-4-8-4s-8 1.79-8 4v2h16v-2z"/></svg>
+                      <span id="dashboard-female-standard-floor2" style="color:#43a047;">-</span>
+                    </div>
+                    <span style="font-size:0.8rem;color:#43a047;margin-top:auto;margin-bottom:0;align-self:flex-end;">(หญิง)</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div style="background:#fff;border-radius:14px;box-shadow:0 2px 8px rgba(0,180,180,0.08);padding:16px 14px 12px 14px;flex:1 1 320px;max-width:520px;border-bottom:4px solid;border-image:linear-gradient(90deg,#b2ebf2 0%,#26c6da 50%,#43a047 100%) 1;display:flex;flex-direction:column;align-items:flex-start;">
+              <div style="display:flex;align-items:center;gap:7px;margin-bottom:8px;">
+                <svg width="18" height="18" viewBox="0 0 32 32" fill="none" stroke="url(#bedLinear2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;">
+                  <defs>
+                    <linearGradient id="bedLinear2" x1="0" y1="0" x2="32" y2="0" gradientUnits="userSpaceOnUse">
+                      <stop stop-color="#b2ebf2"/>
+                      <stop offset="0.5" stop-color="#26c6da"/>
+                      <stop offset="1" stop-color="#43a047"/>
+                    </linearGradient>
+                  </defs>
+                  <rect x="4" y="16" width="24" height="8" rx="3"/>
+                  <rect x="7" y="10" width="18" height="7" rx="2.5"/>
+                  <line x1="4" y1="24" x2="28" y2="24"/>
+                </svg>
+                <span style="font-size:0.95rem;font-weight:600;color:#26c6da;letter-spacing:0.5px;">ห้องพิเศษ</span>
+              </div>
+              <div style="display:flex;gap:10px;align-items:center;">
+                <div style="display:flex;flex-direction:column;align-items:center;gap:2px;font-size:1.1rem;font-weight:600;color:#0097a7;background:#e0f7fa;border-radius:6px;padding:2px 7px 2px 5px;min-width:40px;">
+                  <div style="display:flex;flex-direction:column;flex-grow:1;justify-content:flex-end;align-items:center;height:40px;">
+                    <div style="display:flex;align-items:center;gap:4px;">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="#4dd0e1" style="vertical-align:middle;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                      <span id="dashboard-male-special-floor2" style="color:#0097a7;">-</span>
+                    </div>
+                    <span style="font-size:0.8rem;color:#0097a7;margin-top:auto;margin-bottom:0;align-self:flex-end;margin-right:6px;">(ชาย)</span>
+                  </div>
+                </div>
+                <div style="display:flex;flex-direction:column;align-items:center;gap:2px;font-size:1.1rem;font-weight:600;color:#43a047;background:#e8f5e9;border-radius:6px;padding:2px 7px 2px 5px;min-width:40px;">
+                  <div style="display:flex;flex-direction:column;flex-grow:1;justify-content:flex-end;align-items:center;height:40px;">
+                    <div style="display:flex;align-items:center;gap:4px;">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="#43a047" style="vertical-align:middle;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm6 8c0-2.21-3.58-4-8-4s-8 1.79-8 4v2h16v-2z"/></svg>
+                      <span id="dashboard-female-special-floor2" style="color:#43a047;">-</span>
+                    </div>
+                    <span style="font-size:0.8rem;color:#43a047;margin-top:auto;margin-bottom:0;align-self:flex-end;margin-right:6px;">(หญิง)</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div style="width:100%;max-width:1100px;min-width:320px;margin:0 auto;box-sizing:border-box;display:flex;flex-direction:row;gap:24px;justify-content:center;align-items:stretch;">
+          <section style="background:#fff;border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,0.06);padding:20px 24px 32px 24px;width:50%;min-width:220px;max-width:550px;min-height:420px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:stretch;align-items:stretch;">
+            <h2 class="dashboard-graph-title" style="margin-top:0;">Proportion of Disease Groups Admitted</h2>
+            <canvas id="mainDiseasePieChart" height="180"></canvas>
+            <div id="mainDiseasePieLegend" style="margin-top:18px;"></div>
+          </section>
+          <section style="background:#fff;border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,0.06);padding:20px 24px 32px 24px;width:50%;min-width:220px;max-width:550px;min-height:420px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:stretch;align-items:stretch;">
+            <h2 class="dashboard-graph-title" style="margin-top:0;">IMC : Non-IMC Ratio (Admitted)</h2>
+            <canvas id="imcNonImcBarChart" height="220"></canvas>
+            <div id="imcNonImcBarLegend" style="margin-top:18px;"></div>
+            <div style="display:flex;justify-content:center;gap:32px;margin-top:18px;font-size:1.08rem;font-weight:500;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span style="display:inline-block;width:18px;height:18px;background:#4dd0e1;border-radius:4px;margin-right:4px;"></span>
+                <span>IMC</span>
+                <span style="color:#00796b;font-weight:700;margin-left:4px;">=
+                  <span id="imcTotal"></span>
+                </span>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span style="display:inline-block;width:18px;height:18px;background:#b2ebf2;border-radius:4px;margin-right:4px;"></span>
+                <span>Non-IMC</span>
+                <span style="color:#0097a7;font-weight:700;margin-left:4px;">=
+                  <span id="nonimcTotal"></span>
+                </span>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <section style="width:100%;max-width:1100px;min-width:320px;margin:0 auto;box-sizing:border-box;background:linear-gradient(135deg,#d7f5f7 0%,#e2f8ef 50%,#f0fbf7 100%);border-radius:20px;box-shadow:0 8px 24px rgba(0,150,136,0.12);padding:24px 24px 32px 24px;display:flex;flex-direction:column;border-left:6px solid #4dd0e1;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;background:linear-gradient(135deg,#b2ebf2 0%,#a5d6a7 100%);border-radius:10px;padding:6px 12px 6px 10px;box-shadow:0 6px 18px rgba(77,208,225,0.18);">
+            <svg width="18" height="18" viewBox="0 0 32 32" fill="none" stroke="#00796b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;">
+              <rect x="6" y="10" width="20" height="12" rx="4"/>
+              <rect x="12" y="14" width="8" height="4" rx="2"/>
+              <circle cx="16" cy="20" r="2"/>
+            </svg>
+            <span style="font-size:1rem;font-weight:600;color:#006064;letter-spacing:0.5px;">Booking</span>
+          </div>
+          <div style="font-size:0.95rem;font-weight:500;color:#006064;margin-bottom:16px;">จำนวนผู้ป่วยจองเตียง แยกตามกลุ่มโรค</div>
+          <div style="width:100%;margin-bottom:12px;background:linear-gradient(135deg,rgba(178,235,242,0.95) 0%,rgba(165,214,167,0.9) 100%);padding:16px;border-radius:16px;box-shadow:0 6px 20px rgba(0,151,167,0.18);">
+            <table style="width:100%;border-collapse:separate;border-spacing:0;font-size:1rem;background:rgba(255,255,255,0.95);border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+              <thead>
+                <tr style="background:linear-gradient(90deg,#b2ebf2 0%,#a5d6a7 100%);color:#006064;">
+                  <th style="text-align:left;padding:10px 12px;font-weight:600;">กลุ่มโรค</th>
+                  <th style="text-align:right;padding:10px 12px;font-weight:600;">จำนวน Booking</th>
+                </tr>
+              </thead>
+              <tbody id="bookingByDiseaseBody" style="color:#006064;">
+                <!-- Filled by JS -->
+              </tbody>
+              <tfoot>
+                <tr style="font-weight:bold;background:linear-gradient(90deg,rgba(178,235,242,0.85) 0%,rgba(165,214,167,0.85) 100%);color:#004d40;">
+                  <td style="padding:10px 12px;">Total</td>
+                  <td style="text-align:right;padding:10px 12px;" id="bookingTotal"></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+          <div style="align-self:center;width:120px;height:5px;border-radius:999px;background:linear-gradient(90deg,#4dd0e1 0%,#26c6da 50%,#66bb6a 100%);"></div>
+        </section>
+
+        <div style="width:100%;max-width:1100px;min-width:320px;margin:0 auto;box-sizing:border-box;display:flex;flex-wrap:wrap;gap:24px;justify-content:center;align-items:stretch;">
+          <section style="flex:1 1 360px;min-width:260px;background:#fff;border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,0.06);padding:24px 24px 32px 24px;display:flex;flex-direction:column;">
+            <h2 class="dashboard-graph-title" style="margin-top:0;">Waiting time (IMC : Non-IMC)</h2>
+            <canvas id="waitingTimeLineChart" height="220"></canvas>
+            <div id="waitingTimeLineLegend" style="margin-top:18px;"></div>
+          </section>
+          <section style="flex:1 1 260px;min-width:220px;background:#fff;border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,0.06);padding:24px 24px 32px 24px;display:flex;flex-direction:column;">
+            <h2 class="dashboard-graph-title" style="margin-top:0;">ช่องทางออกนัดหมาย</h2>
+            <canvas id="appointmentChannelBarChart" height="220"></canvas>
+            <div style="margin-top:16px;font-size:0.95rem;color:#006064;font-weight:500;">รวมทั้งหมด <span id="appointmentChannelTotal">0</span> ราย</div>
+          </section>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <footer style="background: linear-gradient(135deg,#80deea 0%,#81c784 100%); padding:20px;text-align:center;width:100%;">
+    <p style="color:white;font-size:14px;margin:0;">© 2024 งานการพยาบาลผู้ป่วยนอก โรงพยาบาลเวชชารักษ์ ลำปาง | Smart Bed Admission Planner</p>
+  </footer>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      var btn = document.getElementById('bookingDropdownBtn');
+      var content = document.getElementById('bookingDropdownContent');
+      if (btn && content) {
+        btn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          content.style.display = content.style.display === 'block' ? 'none' : 'block';
+        });
+        document.addEventListener('click', function(e) {
+          if (!content.contains(e.target) && e.target !== btn) {
+            content.style.display = 'none';
+          }
+        });
+      }
+    });
+  </script>
+
+  <script src="vendor/chart.umd.min.js"></script>
+  <script src="vendor/chartjs-plugin-datalabels.min.js"></script>
+  <script src="ipd-functions.js"></script>
+  <script>
+    function renderIMCRatioChart() {
+      if (typeof getIMCNonIMCByDiseaseFloor2 !== 'function') {
+        console.error('getIMCNonIMCByDiseaseFloor2() is not loaded');
+        return;
+      }
+      const { imc, nonimc } = getIMCNonIMCByDiseaseFloor2();
+      const diseaseLabels = [
+        'Stroke',
+        'SCI (Tetraplegia)',
+        'SCI (Paraplegia)',
+        'TBI',
+        'Hip fracture',
+        'อื่นๆ'
+      ];
+      var imcTotalEl = document.getElementById('imcTotal');
+      var nonimcTotalEl = document.getElementById('nonimcTotal');
+      const imcTotal = imc.reduce((a, b) => a + b, 0);
+      const nonimcTotal = nonimc.reduce((a, b) => a + b, 0);
+      if (imcTotalEl) imcTotalEl.textContent = imcTotal;
+      if (nonimcTotalEl) nonimcTotalEl.textContent = nonimcTotal;
+
+      const ctx = document.getElementById('imcNonImcBarChart').getContext('2d');
+      if (window.imcNonImcBarChartInstance) {
+        window.imcNonImcBarChartInstance.data.datasets[0].data = imc;
+        window.imcNonImcBarChartInstance.data.datasets[1].data = nonimc;
+        window.imcNonImcBarChartInstance.update();
+      } else {
+        window.imcNonImcBarChartInstance = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: diseaseLabels,
+            datasets: [
+              {
+                label: 'IMC',
+                data: imc,
+                backgroundColor: '#4dd0e1',
+                borderRadius: 6,
+                maxBarThickness: 32
+              },
+              {
+                label: 'Non-IMC',
+                data: nonimc,
+                backgroundColor: 'rgba(200, 230, 201, 0.85)',
+                borderRadius: 6,
+                maxBarThickness: 32
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: { display: true, position: 'top' },
+              title: { display: false },
+              datalabels: {
+                anchor: 'end',
+                align: 'end',
+                color: '#0097a7',
+                font: { weight: 'bold', size: 16 },
+                formatter: function(value) {
+                  return value > 0 ? value : '';
+                }
+              }
+            },
+            scales: {
+              x: { stacked: false },
+              y: { beginAtZero: true, title: { display: true, text: 'จำนวนผู้ป่วย' } }
+            }
+          },
+          plugins: [ChartDataLabels]
+        });
+      }
+    }
+    document.addEventListener('DOMContentLoaded', function() {
+      renderIMCRatioChart();
+      setInterval(renderIMCRatioChart, 5000);
+    });
+    window.addEventListener('storage', function(e) {
+      if (e.key === 'bookingData') renderIMCRatioChart();
+    });
+  </script>
+
+  <script>
+    function updateFemaleStandardFloor2() {
+      const el = document.getElementById('dashboard-female-standard-floor2');
+      let val = 0;
+      if (window.fetchFemaleStandardIPDFloor2) {
+        const fetched = fetchFemaleStandardIPDFloor2();
+        if (fetched === null) {
+          el.textContent = '-';
+          el.title = 'ยังไม่มีข้อมูลจาก IPD ชั้น2';
+          return;
+        }
+        val = isNaN(fetched) ? 0 : fetched;
+      }
+      el.textContent = val;
+    }
+    function updateMaleStandardFloor2() {
+      const el = document.getElementById('dashboard-male-standard-floor2');
+      let val = 0;
+      if (window.fetchMaleStandardIPDFloor2) {
+        val = fetchMaleStandardIPDFloor2();
+        if (isNaN(val) || val === null) val = 0;
+      }
+      el.textContent = val;
+    }
+    function updateMaleSpecialFloor2() {
+      const el = document.getElementById('dashboard-male-special-floor2');
+      let val = 0;
+      if (window.fetchMaleSpecialIPDFloor2) {
+        const fetched = fetchMaleSpecialIPDFloor2();
+        if (fetched === null) {
+          el.textContent = '0';
+          el.title = 'ยังไม่มีข้อมูลจาก IPD ชั้น2';
+          return;
+        }
+        val = isNaN(fetched) ? 0 : fetched;
+      }
+      el.textContent = val;
+    }
+    function updateFemaleSpecialFloor2() {
+      const el = document.getElementById('dashboard-female-special-floor2');
+      let val = 0;
+      if (window.fetchFemaleSpecialIPDFloor2) {
+        const fetched = fetchFemaleSpecialIPDFloor2();
+        if (fetched === null) {
+          el.textContent = '0';
+          el.title = 'ยังไม่มีข้อมูลจาก IPD ชั้น2';
+          return;
+        }
+        val = isNaN(fetched) ? 0 : fetched;
+      }
+      el.textContent = val;
+    }
+    function updateActiveBedFloor2() {
+      const el = document.getElementById('dashboard-active-bed-floor2');
+      const activeBeds = localStorage.getItem('ipd_active_beds_floor2');
+      if (activeBeds === null) {
+        el.textContent = '-';
+        el.title = 'ยังไม่มีข้อมูลจาก IPD ชั้น2';
+      } else {
+        el.textContent = activeBeds;
+        el.title = '';
+      }
+    }
+    updateFemaleStandardFloor2();
+    updateMaleStandardFloor2();
+    updateMaleSpecialFloor2();
+    updateFemaleSpecialFloor2();
+    updateActiveBedFloor2();
+    setInterval(updateFemaleStandardFloor2, 5000);
+    setInterval(updateMaleStandardFloor2, 5000);
+    setInterval(updateMaleSpecialFloor2, 5000);
+    setInterval(updateFemaleSpecialFloor2, 5000);
+    setInterval(updateActiveBedFloor2, 5000);
+    window.addEventListener('storage', function(e) {
+      if (e.key === 'ipd_female_standard_floor2') updateFemaleStandardFloor2();
+      if (e.key === 'ipd_male_standard_floor2') updateMaleStandardFloor2();
+      if (e.key === 'ipd_male_special_floor2') updateMaleSpecialFloor2();
+      if (e.key === 'ipd_female_special_floor2') updateFemaleSpecialFloor2();
+      if (e.key === 'ipd_active_beds_floor2') updateActiveBedFloor2();
+    });
+  </script>
+
+  <script src="dashboard-functions.js"></script>
+
+  <script src="dashboard-charts.js"></script>
+</body>
+</html>

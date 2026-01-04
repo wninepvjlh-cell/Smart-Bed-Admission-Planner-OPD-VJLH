@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ข้อมูลผู้ป่วยจองเตียง</title>
+    <script src="access-control.js"></script>
+        <link rel="stylesheet" href="styles.css"><!-- ถ้ามีไฟล์ CSS กลาง -->
+        <style>
+            body {
+                background: linear-gradient(135deg, #e0f7fa 0%, #e8f5e9 100%);
+                font-family: 'Prompt', 'Kanit', 'Segoe UI', Arial, sans-serif;
+                min-height: 100vh;
+                margin: 0;
+            }
+            .sea-btn {
+                background: linear-gradient(135deg,#4dd0e1 0%,#26c6da 100%);
+                color: white;
+                border: none;
+                border-radius: 8px;
+                font-size: 16px;
+                font-weight: 600;
+                cursor: pointer;
+                box-shadow: 0 2px 8px rgba(77,208,225,0.15);
+                transition: all 0.2s;
+                padding: 10px 24px;
+            }
+            .sea-btn:hover {
+                background: linear-gradient(135deg,#26c6da 0%,#4dd0e1 100%);
+                box-shadow: 0 4px 16px rgba(77,208,225,0.18);
+                transform: translateY(-2px);
+            }
+            .container {
+                max-width: 1100px;
+                margin: 32px auto 0 auto;
+                padding: 32px 24px 32px 24px;
+                background: rgba(255,255,255,0.98);
+                border-radius: 24px;
+                box-shadow: 0 4px 24px rgba(0,191,165,0.10);
+            }
+            h1 {
+                font-size: 2.2rem;
+                color: #009688;
+                font-weight: 700;
+                margin-bottom: 28px;
+                letter-spacing: 1px;
+                text-align: center;
+            }
+            #patient-booking-table {
+                width: 100%;
+                border-collapse: separate;
+                border-spacing: 0;
+                background: white;
+                border-radius: 16px;
+                overflow: hidden;
+                box-shadow: 0 2px 12px rgba(77,208,225,0.08);
+            }
+            #patient-booking-table th {
+                background: linear-gradient(90deg,#b2ebf2 0%,#b2dfdb 100%);
+                color: #00796b;
+                font-size: 15px;
+                font-weight: 700;
+                padding: 14px 8px;
+                border-bottom: 2px solid #4dd0e1;
+                text-align: center;
+            }
+            #patient-booking-table td {
+                padding: 12px 8px;
+                font-size: 15px;
+                color: #00695c;
+                background: #f7fafc;
+                border-bottom: 1px solid #e0f2f1;
+                text-align: center;
+            }
+            #patient-booking-table tr:last-child td {
+                border-bottom: none;
+            }
+            #patient-booking-table tbody tr:hover {
+                background: linear-gradient(90deg,#e0f7fa 0%,#e8f5e9 100%);
+                transition: background 0.2s;
+            }
+            #no-data-msg {
+                color: #b0bec5;
+                font-size: 18px;
+                margin: 32px 0;
+            }
+            /* Modal */
+            #booking-detail-modal {
+                display: none;
+                position: fixed;
+                top: 0; left: 0; width: 100vw; height: 100vh;
+                background: rgba(0,191,165,0.10);
+                z-index: 1000;
+                align-items: center;
+                justify-content: center;
+                overflow-y: auto;
+                padding: 20px;
+            }
+            #booking-detail-modal .modal-content {
+                background: linear-gradient(135deg,#e0f7fa 0%,#e8f5e9 100%);
+                padding: 32px 24px;
+                border-radius: 20px;
+                max-width: 600px;
+                width: 100%;
+                box-shadow: 0 8px 32px rgba(0,191,165,0.13);
+                margin: auto;
+            }
+            #booking-detail-modal h3 {
+                color: #009688;
+                font-size: 22px;
+                margin: 0 0 20px 0;
+                font-weight: 700;
+                border-bottom: 3px solid #4dd0e1;
+                padding-bottom: 12px;
+                text-align: center;
+            }
+            #booking-detail-modal .modal-detail-row {
+                margin-bottom: 14px;
+                font-size: 16px;
+                color: #00695c;
+                display: flex;
+                gap: 8px;
+                align-items: center;
+            }
+            #booking-detail-modal .modal-detail-row b {
+                min-width: 120px;
+                color: #00796b;
+                font-weight: 600;
+            }
+            #booking-detail-modal .modal-btns {
+                display: flex;
+                gap: 10px;
+                margin-top: 24px;
+            }
+            @media (max-width: 700px) {
+                .container { padding: 16px 2vw; }
+                #booking-detail-modal .modal-content { padding: 18px 4vw; }
+                #patient-booking-table th, #patient-booking-table td { font-size: 13px; padding: 8px 4px; }
+            }
+        </style>
+</head>
+<body>
+        <script>
+            (function runOneTimePatientDataPurge() {
+                if (typeof window === 'undefined') {
+                    return;
+                }
+                if (window.__sbpDataPurge) {
+                    window.__sbpDataPurge();
+                    return;
+                }
+                const FLAG_KEY = 'sbp_data_purged_20260103';
+                const KEYS_TO_CLEAR = [
+                    'bookingData',
+                    'ipdData',
+                    'ipd_female_standard_floor2',
+                    'ipd_female_special_floor2',
+                    'ipd_male_standard_floor2',
+                    'ipd_male_special_floor2',
+                    'ipd_active_beds_floor2'
+                ];
+                window.__sbpDataPurge = function __sbpDataPurge() {
+                    if (typeof window === 'undefined' || !window.localStorage) {
+                        return;
+                    }
+                    if (localStorage.getItem(FLAG_KEY)) {
+                        return;
+                    }
+                    KEYS_TO_CLEAR.forEach(function(key) {
+                        try {
+                            localStorage.removeItem(key);
+                        } catch (error) {
+                            console.warn('Unable to remove key from localStorage:', key, error);
+                        }
+                    });
+                    try {
+                        localStorage.setItem(FLAG_KEY, new Date().toISOString());
+                    } catch (error) {
+                        console.warn('Unable to set purge flag in localStorage:', error);
+                    }
+                };
+                window.__sbpDataPurge();
+            })();
+        </script>
+                <div style="max-width:1100px;margin:0 auto 0 auto;padding:0 24px 0 24px;">
+                    <button onclick="window.location.href='booking.html'" class="sea-btn" style="margin:24px 0 0 0;float:left;">← กลับไปหน้าเมนูจองเตียง Admit</button>
+                </div>
+                <div style="max-width:1100px;margin:32px auto 0 auto;padding:0 24px 0 24px;display:flex;flex-wrap:wrap;align-items:center;gap:16px;clear:both;">
+                    <div style="margin:24px 0 0 0;display:flex;align-items:center;gap:8px;">
+                        <label for="date-from" style="font-weight:600;color:#009688;">วันที่ Admit</label>
+                        <input type="date" id="date-from" style="padding:6px 10px;border-radius:6px;border:1px solid #b2dfdb;outline:none;">
+                        <span style="color:#009688;">ถึง</span>
+                        <input type="date" id="date-to" style="padding:6px 10px;border-radius:6px;border:1px solid #b2dfdb;outline:none;">
+                        <button class="sea-btn" style="padding:7px 18px;font-size:15px;" onclick="filterByDate()">แสดงข้อมูล</button>
+                    </div>
+                </div>
+        <!-- ปุ่มกลับไปหน้าเมนูจองเตียง Admit เหลือเพียงอันเดียว -->
+        <!-- ปุ่มกลับไปหน้าเมนูจองเตียง Admit เหลือเพียงอันเดียว -->
+        <!-- ...existing code for navigation bar... -->
+        <div class="container" style="max-width:1100px;margin:32px auto 0 auto;padding:24px;background:white;border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+        <h1>ข้อมูลผู้ป่วยจองเตียง</h1>
+        <div style="overflow-x:auto;">
+                    <div style="margin-bottom:12px;text-align:right;">
+                        <button class="sea-btn" onclick="exportToExcel()" style="background:#90a4ae;">⬇️ Export Excel</button>
+                    </div>
+            <table id="patient-booking-table">
+                <thead>
+                    <tr>
+                        <th>วันที่ลงข้อมูลนัดหมาย</th>
+                        <th>HN</th>
+                        <th>ชื่อ-สกุล</th>
+                        <th>อายุ</th>
+                        <th>เพศ</th>
+                        <th>Diagnosis</th>
+                        <th>วันที่ Admit</th>
+                        <th>ประเภทเตียง</th>
+                        <th>เตียงที่จอง</th>
+                        <th>สถานะ IMC/Non-IMC</th>
+                        <th>Waiting Time</th>
+                        <th>Lab pre-admit</th>
+                        <th>ช่องทางออกนัดหมาย</th>
+                        <th>ดูรายละเอียด</th>
+                    </tr>
+                </thead>
+                <tbody id="patient-booking-tbody">
+                    <!-- ข้อมูลผู้ป่วยจะถูกเติมที่นี่ด้วย JS -->
+                </tbody>
+            </table>
+        </div>
+        <div id="no-data-msg">ยังไม่มีข้อมูลผู้ป่วยจองเตียง</div>
+        </div>
+
+        <!-- Modal แสดงรายละเอียดผู้ป่วย -->
+        <div id="booking-detail-modal">
+            <div class="modal-content" onclick="event.stopPropagation()">
+                <h3>ข้อมูลผู้ป่วยจองเตียง</h3>
+                <div class="modal-detail-row"><b>วันที่ลงข้อมูล:</b> <span id="detail-created-date">-</span></div>
+                <div class="modal-detail-row"><b>HN:</b> <span id="detail-hn">-</span></div>
+                <div class="modal-detail-row"><b>ชื่อ-สกุล:</b> <span id="detail-name">-</span></div>
+                <div class="modal-detail-row"><b>อายุ:</b> <span id="detail-age">-</span></div>
+                <div class="modal-detail-row"><b>เพศ:</b> <span id="detail-gender">-</span></div>
+                <div class="modal-detail-row"><b>Diagnosis:</b> <span id="detail-diagnosis">-</span></div>
+                <div class="modal-detail-row"><b>วันที่ Admit:</b> <span id="detail-admit-date">-</span></div>
+                <div class="modal-detail-row"><b>ประเภทเตียง:</b> <span id="detail-bed-type">-</span></div>
+                <div class="modal-detail-row"><b>เตียงที่จอง:</b> <span id="detail-bed">-</span></div>
+                <div class="modal-detail-row"><b>สถานะ IMC/Non-IMC:</b> <span id="detail-imc-status">-</span></div>
+                <div class="modal-detail-row"><b>Waiting Time:</b> <span id="detail-waiting-time">-</span></div>
+                <div class="modal-detail-row"><b>Lab pre-admit:</b> <span id="detail-lab-pre-admit">-</span></div>
+                <div class="modal-detail-row"><b>ช่องทางออกนัดหมาย:</b> <span id="detail-appointment-channel-out">-</span></div>
+                <div class="modal-detail-row"><b>แพทย์เจ้าของไข้:</b> <span id="detail-doctor">-</span></div>
+                <div class="modal-detail-row"><b>ช่องทางนัดหมาย:</b> <span id="detail-channel">-</span></div>
+                <div class="modal-detail-row"><b>หมายเหตุ:</b> <span id="detail-notes">-</span></div>
+                <div class="modal-btns">
+                    <button onclick="closeBookingDetailModal()" class="sea-btn">ปิด</button>
+                </div>
+            </div>
+        </div>
+        </div>
+
+        <script>
+                                    // SheetJS (xlsx) CDN
+                                    </script>
+                                    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+                                    <script>
+                                // ฟังก์ชันแปลงวันที่ yyyy-mm-dd เป็น Date (ไม่สนเวลา)
+                                function parseDateOnly(str) {
+                                    if (!str) return null;
+                                    const [y, m, d] = str.split('-');
+                                    return new Date(Number(y), Number(m)-1, Number(d));
+                                }
+
+                                // ฟังก์ชัน filter ตารางตามช่วงวันที่ admit
+                                function filterByDate() {
+                                    const from = document.getElementById('date-from').value;
+                                    const to = document.getElementById('date-to').value;
+                                    window._filterDateFrom = from;
+                                    window._filterDateTo = to;
+                                    loadBookingTable();
+                                }
+                        // ฟังก์ชันแปลงวันที่ yyyy-mm-dd เป็น Date (ไม่สนเวลา)
+                        function parseDateOnly(str) {
+                            if (!str) return null;
+                            const [y, m, d] = str.split('-');
+                            return new Date(Number(y), Number(m)-1, Number(d));
+                        }
+
+                        // ฟังก์ชัน filter ตารางตามช่วงวันที่ admit
+                        function filterByDate() {
+                            const from = document.getElementById('date-from').value;
+                            const to = document.getElementById('date-to').value;
+                            window._filterDateFrom = from;
+                            window._filterDateTo = to;
+                            loadBookingTable();
+                        }
+                // แปลง Waiting Time เป็น wk และ d
+                function formatWaitingTime(val) {
+                    if (!val) return '-';
+                    // รองรับรูปแบบ "2 สัปดาห์ 3 วัน" หรือ "1 สัปดาห์" หรือ "4 วัน"
+                    let wk = 0, d = 0;
+                    const weekMatch = val.match(/(\d+)\s*สัปดาห์/);
+                    const dayMatch = val.match(/(\d+)\s*วัน/);
+                    if (weekMatch) wk = parseInt(weekMatch[1]);
+                    if (dayMatch) d = parseInt(dayMatch[1]);
+                    let out = [];
+                    if (wk) out.push(wk + ' wk');
+                    if (d) out.push(d + ' d');
+                    return out.length ? out.join(' ') : val;
+                }
+        // ฟังก์ชันแปลงวันที่ไทย
+        function formatDateTH(dateString) {
+            if (!dateString) return '-';
+            const date = new Date(dateString);
+            const day = date.getDate();
+            const month = date.getMonth() + 1;
+            const year = date.getFullYear() + 543;
+            return `${day}/${month}/${year}`;
+        }
+
+        // Store filtered patients globally for detail lookup
+        let _currentFilteredPatients = [];
+        function loadBookingTable() {
+            const stored = localStorage.getItem('bookingData');
+            let booked = [];
+            if (stored) {
+                try {
+                    const data = JSON.parse(stored);
+                    booked = data.booked || [];
+                } catch {}
+            }
+            const tbody = document.getElementById('patient-booking-tbody');
+            const noDataMsg = document.getElementById('no-data-msg');
+            tbody.innerHTML = '';
+            if (!booked.length) {
+                noDataMsg.style.display = 'block';
+                _currentFilteredPatients = [];
+                return;
+            } else {
+                noDataMsg.style.display = 'none';
+            }
+            // filter by admit_date if filter is set
+            let filtered = booked;
+            if (window._filterDateFrom || window._filterDateTo) {
+                filtered = booked.filter(p => {
+                    if (!p.admit_date) return false;
+                    const admit = parseDateOnly(p.admit_date);
+                    if (!admit) return false;
+                    let ok = true;
+                    if (window._filterDateFrom) {
+                        const from = parseDateOnly(window._filterDateFrom);
+                        if (admit < from) ok = false;
+                    }
+                    if (window._filterDateTo) {
+                        const to = parseDateOnly(window._filterDateTo);
+                        if (admit > to) ok = false;
+                    }
+                    return ok;
+                });
+            }
+            _currentFilteredPatients = filtered;
+            filtered.forEach((p, idx) => {
+                const tr = document.createElement('tr');
+                // ใช้ created_date ถ้ามี ถ้าไม่มีก็ fallback เป็น booking_date
+                const dateStr = p.created_date || p.booking_date || '';
+                tr.innerHTML = `
+                    <td style="padding:8px;text-align:center;">${formatDateTH(dateStr)}</td>
+                    <td style="padding:8px;text-align:center;">${p.patient_hn || '-'}</td>
+                    <td style="padding:8px;">${p.patient_name || '-'}</td>
+                    <td style="padding:8px;text-align:center;">${p.patient_age ? p.patient_age + ' ปี' : '-'}</td>
+                    <td style="padding:8px;text-align:center;">${p.patient_gender || '-'}</td>
+                    <td style="padding:8px;">${p.diagnosis || '-'}</td>
+                    <td style="padding:8px;text-align:center;">${formatDateTH(p.admit_date)}</td>
+                    <td style="padding:8px;text-align:center;">${p.bed_type === 'standard' ? 'เตียงสามัญ' : (p.bed_type === 'vip' ? 'ห้องพิเศษ' : '-')}</td>
+                    <td style="padding:8px;text-align:center;">${p.assigned_bed || '-'}</td>
+                    <td style="padding:8px;text-align:center;">${p.imc_status || '-'}</td>
+                    <td style="padding:8px;text-align:center;">${formatWaitingTime(p.waiting_time)}</td>
+                    <td style="padding:8px;text-align:center;">${p.lab_package || '-'}</td>
+                    <td style="padding:8px;text-align:center;">${p.appointment_channel || '-'}</td>
+                    <td style="padding:8px;text-align:center;">
+                        <button onclick="showBookingDetail(${idx})" style="padding:6px 14px;background:#4dd0e1;color:white;border:none;border-radius:6px;cursor:pointer;font-size:13px;">ดูรายละเอียด</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function showBookingDetail(idx) {
+            const p = _currentFilteredPatients[idx];
+            if (!p) return;
+            document.getElementById('detail-created-date').textContent = formatDateTH(p.created_date);
+            document.getElementById('detail-hn').textContent = p.patient_hn || '-';
+            document.getElementById('detail-name').textContent = p.patient_name || '-';
+            document.getElementById('detail-age').textContent = p.patient_age ? p.patient_age + ' ปี' : '-';
+            document.getElementById('detail-gender').textContent = p.patient_gender || '-';
+            document.getElementById('detail-diagnosis').textContent = p.diagnosis || '-';
+            document.getElementById('detail-admit-date').textContent = formatDateTH(p.admit_date);
+            document.getElementById('detail-bed-type').textContent = p.bed_type === 'standard' ? 'เตียงสามัญ' : (p.bed_type === 'vip' ? 'ห้องพิเศษ' : '-');
+            document.getElementById('detail-bed').textContent = p.assigned_bed || '-';
+            document.getElementById('detail-imc-status').textContent = p.imc_status || '-';
+            document.getElementById('detail-waiting-time').textContent = formatWaitingTime(p.waiting_time);
+            document.getElementById('detail-lab-pre-admit').textContent = p.lab_package || '-';
+            document.getElementById('detail-appointment-channel-out').textContent = p.appointment_channel || '-';
+            document.getElementById('detail-doctor').textContent = p.attending_doctor || '-';
+            document.getElementById('detail-channel').textContent = p.appointment_channel || '-';
+            document.getElementById('detail-notes').textContent = p.notes || '-';
+            document.getElementById('booking-detail-modal').style.display = 'flex';
+        }
+        function closeBookingDetailModal() {
+            document.getElementById('booking-detail-modal').style.display = 'none';
+        }
+        // Close modal when clicking outside modal-content
+        document.getElementById('booking-detail-modal').onclick = function() {
+            closeBookingDetailModal();
+        };
+        window.onload = loadBookingTable;
+                // Export table to Excel
+                function exportToExcel() {
+                    const table = document.getElementById('patient-booking-table');
+                    if (!table) return;
+                    // Clone table to remove icons and keep only text
+                    const tableClone = table.cloneNode(true);
+                    Array.from(tableClone.querySelectorAll('td,th')).forEach(cell => {
+                        cell.innerHTML = cell.textContent;
+                    });
+                    const wb = XLSX.utils.table_to_book(tableClone, {sheet: "Booking"});
+                    XLSX.writeFile(wb, 'patient-booking.xlsx');
+                }
+        </script>
+</body>
+</html>

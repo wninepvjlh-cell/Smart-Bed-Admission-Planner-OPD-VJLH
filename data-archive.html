@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>คลังข้อมูล - Smart Bed Admission Planner</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: 'Sarabun', sans-serif; background: linear-gradient(135deg, #e0f7fa 0%, #e8f5e9 100%); min-height: 100vh; }
+    
+    .nav-button { padding: 10px 20px; border-radius: 8px; background: white; color: #00796b; text-decoration: none; font-weight: 500; transition: all 0.3s; }
+    .nav-button:hover { background: linear-gradient(135deg, #4dd0e1 0%, #26c6da 100%) !important; color: white !important; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(77, 208, 225, 0.4); }
+    .nav-button.active { background: linear-gradient(135deg, #00897b 0%, #00796b 100%) !important; color: white !important; font-weight: 600; }
+    
+    main { padding: 24px; max-width: 1400px; margin: 0 auto; }
+    .page-header { background: linear-gradient(135deg, #ffffff 0%, #e0f7fa 100%); border-radius: 16px; padding: 24px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    
+    .search-container { background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    .search-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-bottom: 16px; }
+    .search-field { display: flex; flex-direction: column; gap: 8px; }
+    .search-field label { color: #00796b; font-weight: 600; font-size: 14px; }
+    .search-field input, .search-field select { padding: 10px; border: 2px solid #b2dfdb; border-radius: 8px; font-size: 14px; }
+    .search-field input:focus, .search-field select:focus { outline: none; border-color: #26a69a; }
+    
+    .button-group { display: flex; gap: 12px; flex-wrap: wrap; }
+    .btn { padding: 12px 24px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s; font-size: 15px; }
+    .btn-primary { background: linear-gradient(135deg, #26a69a 0%, #00897b 100%); color: white; }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(38,166,154,0.3); }
+    .btn-secondary { background: linear-gradient(135deg, #90a4ae 0%, #78909c 100%); color: white; }
+    
+    .results-container { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    .table-container { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th { background: linear-gradient(135deg, #26a69a 0%, #66bb6a 100%); color: white; padding: 12px; text-align: left; font-weight: 600; position: sticky; top: 0; }
+    td { padding: 12px; border-bottom: 1px solid #e0e0e0; }
+    tr:hover { background: #f1f8e9; }
+    
+    .empty-state { text-align: center; padding: 40px; color: #78909c; }
+    .empty-state svg { width: 64px; height: 64px; margin-bottom: 16px; opacity: 0.5; }
+    
+    .badge { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+    .badge-booking { background: #fff3e0; color: #e65100; }
+    .badge-confirmed { background: #e3f2fd; color: #1565c0; }
+    .badge-postponed { background: #fff9c4; color: #f57c00; }
+    .badge-admitted { background: #e8f5e9; color: #2e7d32; }
+    .badge-discharged { background: #f3e5f5; color: #6a1b9a; }
+    .badge-referred { background: #fce4ec; color: #ad1457; }
+    .badge-resistant { background: #fff9c4; color: #f57f17; }
+    .badge-cancelled { background: #ffebee; color: #c62828; }
+  </style>
+  <script src="access-control.js"></script>
+</head>
+<body>
+  <button type="button" id="logoutBtn" class="logout-button">Logout</button>
+    <script>
+      (function runOneTimePatientDataPurge() {
+        if (typeof window === 'undefined') {
+          return;
+        }
+        if (window.__sbpDataPurge) {
+          window.__sbpDataPurge();
+          return;
+        }
+        const FLAG_KEY = 'sbp_data_purged_20260103';
+        const KEYS_TO_CLEAR = [
+          'bookingData',
+          'ipdData',
+          'ipd_female_standard_floor2',
+          'ipd_female_special_floor2',
+          'ipd_male_standard_floor2',
+          'ipd_male_special_floor2',
+          'ipd_active_beds_floor2'
+        ];
+        window.__sbpDataPurge = function __sbpDataPurge() {
+          if (typeof window === 'undefined' || !window.localStorage) {
+            return;
+          }
+          if (localStorage.getItem(FLAG_KEY)) {
+            return;
+          }
+          KEYS_TO_CLEAR.forEach(function(key) {
+            try {
+              localStorage.removeItem(key);
+            } catch (error) {
+              console.warn('Unable to remove key from localStorage:', key, error);
+            }
+          });
+          try {
+            localStorage.setItem(FLAG_KEY, new Date().toISOString());
+          } catch (error) {
+            console.warn('Unable to set purge flag in localStorage:', error);
+          }
+        };
+        window.__sbpDataPurge();
+      })();
+    </script>
+    <header style="background: linear-gradient(135deg, #80deea 0%, #81c784 100%); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);">
+      <div style="padding: 24px; text-align: center;">
+        <h1 style="font-size: 2.2rem; font-weight: 600; color: white; margin: 0;">Smart Bed Admission Planner</h1>
+        <div style="font-size: 1.2rem; font-weight: 400; color: white;">โรงพยาบาลเวชชารักษ์ ลำปาง</div>
+        <div style="font-size: 1rem; margin-top: 8px; color: rgba(255,255,255,0.9);">เวชศาสตร์ฟื้นฟู - งานการพยาบาลผู้ป่วยนอก</div>
+      </div>
+    </header>
+    <nav style="background: white; padding: 16px 24px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); width: 100%; margin-bottom: 0;">
+      <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+        <div style="display:flex; gap:12px; flex-wrap:wrap; justify-content:center; flex:1 1 auto;">
+          <a class="nav-button" href="dashboard.html" style="padding: 10px 20px; border-radius: 8px; background: white; font-size: 15px; font-weight: 500; color: #00796b; text-decoration: none;">Dashboard</a>
+          <a class="nav-button" href="predict.html" style="padding: 10px 20px; border-radius: 8px; background: white; font-size: 15px; font-weight: 500; color: #00796b;">คาดการณ์วัน Admit เร็วสุด</a>
+          <a class="nav-button" href="booking.html" style="padding: 10px 20px; border-radius: 8px; background: white; font-size: 15px; font-weight: 500; color: #00796b;">จองเตียง Admit</a>
+          <a class="nav-button" href="registry.html" style="padding: 10px 20px; border-radius: 8px; background: white; font-size: 15px; font-weight: 500; color: #00796b;">ทะเบียนจองเตียง</a>
+          <a class="nav-button" href="ipd.html" style="padding: 10px 20px; border-radius: 8px; background: white; font-size: 15px; font-weight: 500; color: #00796b;">หอผู้ป่วยใน(IPD)</a>
+          <a class="nav-button active" href="data-archive.html" style="padding: 10px 20px; border-radius: 8px; background: white; font-size: 15px; font-weight: 500; color: #00796b;">คลังข้อมูล</a>
+        </div>
+      </div>
+    </nav>
+
+  <script>
+    // Logout function removed
+  </script>
+
+  <main>
+
+    <div class="page-header">
+      <h2 style="color:#00796b;font-size:24px;font-weight:600;margin-bottom:8px;">📊 คลังข้อมูลผู้ป่วย</h2>
+      <p style="color:#546e7a;font-size:14px;">ค้นหาและดูข้อมูลผู้ป่วยทั้งหมดในระบบ</p>
+      <!-- Submenu -->
+      <div id="data-submenu" style="margin-top:18px; display:flex; gap:12px; flex-wrap:wrap;">
+
+      </div>
+    </div>
+
+    <!-- Submenu Content -->
+    <div id="submenu-status" class="submenu-content">
+      <div class="search-container">
+      <!-- Row 1: HN/Name, Date From, Date To -->
+      <div class="search-grid" style="margin-bottom:16px;">
+        <div class="search-field">
+          <label>🔍 HN / ชื่อผู้ป่วย</label>
+          <input type="text" id="searchHNName" placeholder="ค้นหาด้วย HN หรือชื่อผู้ป่วย">
+        </div>
+        <div class="search-field">
+          <label>📅 วันที่ (จาก)</label>
+          <input type="date" id="searchDateFrom">
+        </div>
+        <div class="search-field">
+          <label>📅 วันที่ (ถึง)</label>
+          <input type="date" id="searchDateTo">
+        </div>
+      </div>
+      
+      <!-- Row 2: Status, IMC, Diagnosis -->
+      <div class="search-grid">
+        <div class="search-field">
+          <label>📋 สถานะ</label>
+          <select id="searchStatus">
+            <option value="">ทั้งหมด</option>
+            <option value="booked">Booking</option>
+            <option value="postponed">เลื่อนนัด Admit</option>
+            <option value="admitted">Admitted</option>
+            <option value="discharged">จำหน่ายแล้ว</option>
+            <option value="referred">Refer</option>
+            <option value="resistant_bacteria">เชื้อดื้อยา</option>
+            <option value="cancelled">ยกเลิก</option>
+          </select>
+        </div>
+        <div class="search-field">
+          <label>🏥 IMC/Non-IMC</label>
+          <select id="searchIMC">
+            <option value="">ทั้งหมด</option>
+            <option value="IMC">IMC</option>
+            <option value="Non-IMC">Non-IMC</option>
+          </select>
+        </div>
+        <div class="search-field">
+          <label>🩺 Diagnosis</label>
+          <select id="searchDiagnosis">
+            <option value="">ทั้งหมด</option>
+            <option value="Stroke">Stroke</option>
+            <option value="SCI(Tetraplegia)">SCI (Tetraplegia)</option>
+            <option value="SCI(Paraplegia)">SCI (Paraplegia)</option>
+            <option value="TBI">TBI</option>
+            <option value="Hip Fracture">Hip Fracture</option>
+            <option value="etc">Etc.</option>
+          </select>
+        </div>
+        <div class="search-field">
+          <label>📢 ช่องทางการออกนัดหมาย</label>
+          <select id="searchChannel">
+            <option value="">ทั้งหมด</option>
+            <option value="OPD case">OPD case</option>
+            <option value="IPD case">IPD case</option>
+            <option value="Telemedicine">Telemedicine</option>
+            <option value="Seamless Refer">Seamless Refer</option>
+            <option value="Walk in">Walk in</option>
+          </select>
+        </div>
+      </div>
+      
+      <div class="button-group" style="margin-top:16px;">
+        <button class="btn btn-primary" onclick="searchData()">🔍 ค้นหา</button>
+        <button class="btn btn-secondary" onclick="clearSearch()">🔄 ล้างการค้นหา</button>
+        <button class="btn btn-secondary" onclick="showAllData()">📑 แสดงทั้งหมด</button>
+        <button class="btn btn-secondary" onclick="exportToExcel()">⬇️ Export Excel</button>
+      </main>
+
+        <!-- SheetJS (xlsx) CDN -->
+        <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+        <script>
+          // Export table to Excel
+          function exportToExcel() {
+            const table = document.getElementById('dataTable');
+            if (!table) return;
+            // Clone table to remove icons and keep only text
+            const tableClone = table.cloneNode(true);
+            Array.from(tableClone.querySelectorAll('td,th')).forEach(cell => {
+              cell.innerHTML = cell.textContent;
+            });
+            const wb = XLSX.utils.table_to_book(tableClone, {sheet: "Archive"});
+            XLSX.writeFile(wb, 'patient-archive.xlsx');
+          }
+        </script>
+      </div>
+    </div>
+
+    <div class="results-container" id="status-results-container">
+      <h3 style="color:#00796b;margin-bottom:16px;font-size:18px;">ผลการค้นหา: <span id="resultCount">0</span> รายการ</h3>
+      <div class="table-container">
+        <table id="dataTable">
+          <thead>
+            <tr>
+              <th>HN</th>
+              <th>ชื่อผู้ป่วย</th>
+              <th>อายุ</th>
+              <th>เพศ</th>
+              <th>โรค</th>
+              <th>แพทย์</th>
+              <th>ช่วงเวลา</th>
+              <th>เตียง</th>
+              <th>สถานะ</th>
+              <th>ช่องทางนัดหมาย</th>
+              <th>ผู้บันทึก</th>
+              <th>หมายเหตุ</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody">
+            <tr>
+              <td colspan="10" class="empty-state">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <path d="m21 21-4.35-4.35"></path>
+                </svg>
+    </div>
+
+
+  <script>
+    // Debug: Print ipdData.floor2 to console
+    document.addEventListener('DOMContentLoaded', function() {
+      const debugBtn = document.getElementById('debugIpdDataBtn');
+      if (debugBtn) {
+        debugBtn.addEventListener('click', function() {
+          const ipdData = JSON.parse(localStorage.getItem('ipdData')) || { floor2: [] };
+          console.log('[DEBUG] ipdData.floor2:', ipdData.floor2);
+          alert('ดูข้อมูลใน console (F12)');
+        });
+      }
+    });
+
+
+
+
+
+
+        // Load Chart.js from CDN if not present
+        function ensureChartJsLoaded(callback) {
+          if (window.Chart) { callback(); return; }
+          const script = document.createElement('script');
+          script.src = 'https://cdn.jsdelivr.net/npm/chart.js';
+          script.onload = callback;
+          document.head.appendChild(script);
+        }
+
+        // Active beds UI logic (graph, table, avg)
+        function loadActiveBedsUI() {
+          const from = document.getElementById('activebed-date-from').value;
+          const to = document.getElementById('activebed-date-to').value;
+          if (!from || !to) return;
+          // Get data from localStorage
+          const bookingData = JSON.parse(localStorage.getItem('bookingData')) || { admitted: [] };
+          console.log('[ActiveBeds] bookingData:', bookingData);
+          const floor2Beds = ['V1', 'V2', 'V3', 'V4', 'V5', 'V6', 'B4', 'B5', 'B6', 'B7', 'B8', 'B9', 'B10', 'B11', 'B12', 'B14', 'B15', 'B16'];
+          const admittedPatients = (bookingData.admitted || []).filter(
+            p => p.floor === 'floor2' && p.admit_status === 'admitted' && floor2Beds.includes(p.assigned_bed)
+          );
+          console.log('[ActiveBeds] admittedPatients:', admittedPatients);
+          if (!Array.isArray(bookingData.admitted) || bookingData.admitted.length === 0) {
+            document.getElementById('active-beds-graph-container').innerHTML = '<div style="color:#c00;padding:24px 0;text-align:center;">ไม่พบข้อมูลผู้ป่วยในระบบ (bookingData.admitted)</div>';
+            document.getElementById('active-beds-table').innerHTML = '';
+            document.getElementById('active-beds-avg').innerHTML = '';
+            return;
+          }
+          const start = new Date(from);
+          const end = new Date(to);
+          let labels = [], data = [], total = 0, days = 0, tableRows = '';
+          for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+            const dayStr = d.toISOString().split('T')[0];
+            const count = admittedPatients.filter(p => {
+              if (!p.admitted_date || !p.expected_discharge_date) {
+                console.warn('Missing admitted_date or expected_discharge_date for patient:', p);
+                return false;
+              }
+              return p.admitted_date <= dayStr && dayStr <= p.expected_discharge_date;
+            }).length;
+            labels.push(formatDateThai(dayStr));
+            data.push(count);
+            tableRows += `<tr><td style='padding:6px 8px;'>${formatDateThai(dayStr)}</td><td style='padding:6px 8px;text-align:center;'>${count}</td></tr>`;
+            total += count;
+            days++;
+          }
+          // ถ้าไม่มีข้อมูลเลย
+          if (admittedPatients.length === 0) {
+            document.getElementById('active-beds-graph-container').innerHTML = '<div style="color:#c00;padding:24px 0;text-align:center;">ไม่พบข้อมูลผู้ป่วยในชั้น 2 สำหรับช่วงวันที่ที่เลือก</div>';
+            document.getElementById('active-beds-table').innerHTML = '';
+            document.getElementById('active-beds-avg').innerHTML = '';
+            return;
+          }
+          // Draw chart
+          ensureChartJsLoaded(function() {
+            const ctx = document.getElementById('active-beds-chart').getContext('2d');
+            if (window.activeBedsChart) window.activeBedsChart.destroy();
+            window.activeBedsChart = new Chart(ctx, {
+              type: 'bar',
+              data: {
+                labels: labels,
+                datasets: [{
+                  label: 'Active beds',
+                  data: data,
+                  backgroundColor: 'rgba(38, 166, 154, 0.7)',
+                  borderColor: '#00897b',
+                  borderWidth: 2,
+                  borderRadius: 6,
+                  maxBarThickness: 40
+                }]
+              },
+              options: {
+                responsive: true,
+                plugins: {
+                  legend: { display: false },
+                  title: { display: false }
+                },
+                scales: {
+                  x: { grid: { display: false } },
+                  y: { beginAtZero: true, ticks: { precision:0 } }
+                }
+              }
+            });
+          });
+          // Table
+          document.getElementById('active-beds-graph-container').innerHTML = '<canvas id="active-beds-chart" height="80"></canvas>';
+          document.getElementById('active-beds-table').innerHTML =
+            `<table style='width:100%;border-collapse:collapse;margin-bottom:12px;'><tr style='background:#e0f7fa;'><th style='padding:6px 8px;'>วันที่</th><th style='padding:6px 8px;'>Active beds</th></tr>${tableRows}</table>`;
+          // Average
+          const avg = days > 0 ? (total / days).toFixed(2) : 0;
+          document.getElementById('active-beds-avg').innerHTML = `ค่าเฉลี่ย Active beds: <span style='color:#00796b;'>${avg}</span> เตียง`;
+        }
+    // Update displayed user name if available
+    window.addEventListener('DOMContentLoaded', function() {
+      const storedName = sessionStorage.getItem('app_user_name');
+      const userNameLabel = document.getElementById('userName');
+      if (storedName && userNameLabel) {
+        userNameLabel.textContent = storedName;
+      }
+    });
+
+    // Duplicate logout function removed
+
+    function getAllData() {
+      const bookingData = JSON.parse(localStorage.getItem('bookingData')) || {
+        booked: [],
+        confirmed: [],
+        admitted: [],
+        discharged: [],
+        cancelled: []
+      };
+
+      let allPatients = [];
+      // Referred
+      if (bookingData.referred) {
+        bookingData.referred.forEach(p => {
+          allPatients.push({ ...p, current_status: 'referred' });
+        });
+      }
+
+      // Booked
+      bookingData.booked.forEach(p => {
+        allPatients.push({...p, current_status: 'booked'});
+      });
+
+      // Confirmed
+      bookingData.confirmed.forEach(p => {
+        if (p.postponed) {
+          allPatients.push({...p, current_status: 'postponed'});
+        } else {
+          allPatients.push({...p, current_status: 'confirmed'});
+        }
+      });
+
+      // Admitted
+      bookingData.admitted.forEach(p => {
+        if (p.admit_status === 'waiting') {
+          allPatients.push({...p, current_status: 'waiting'});
+        } else {
+          allPatients.push({...p, current_status: 'admitted'});
+        }
+      });
+
+      // Discharged
+      if (bookingData.discharged) {
+        bookingData.discharged.forEach(p => {
+          allPatients.push({...p, current_status: 'discharged'});
+        });
+      }
+
+      // Cancelled
+      if (bookingData.cancelled) {
+        bookingData.cancelled.forEach(p => {
+          allPatients.push({...p, current_status: 'cancelled'});
+        });
+      }
+
+      // Resistant Bacteria: รวมทุกสถานะ (admitted, discharged, referred) ที่มีเชื้อดื้อยา
+      ['admitted', 'discharged', 'cancelled', 'booked', 'confirmed'].forEach(status => {
+        (bookingData[status] || []).forEach(p => {
+          if (
+            p.culture_mrsa || p.culture_vre || p.culture_cre || p.culture_esbl || (p.culture_other && p.culture_other !== '')
+          ) {
+            allPatients.push({
+              ...p,
+              current_status: 'resistant_bacteria',
+              resistant_bacteria: [
+                p.culture_mrsa ? 'MRSA' : null,
+                p.culture_vre ? 'VRE' : null,
+                p.culture_cre ? 'CRE' : null,
+                p.culture_esbl ? 'ESBL' : null,
+                p.culture_other && p.culture_other !== '' ? p.culture_other : null
+              ].filter(Boolean).join(', ')
+            });
+          }
+        });
+      });
+
+      return allPatients;
+    }
+
+    function searchData() {
+      const searchHNName = document.getElementById('searchHNName').value.toLowerCase();
+      const searchStatus = document.getElementById('searchStatus').value;
+      const searchDateFrom = document.getElementById('searchDateFrom').value;
+      const searchDateTo = document.getElementById('searchDateTo').value;
+      const searchIMC = document.getElementById('searchIMC').value;
+      const searchDiagnosis = document.getElementById('searchDiagnosis').value;
+      const searchChannel = document.getElementById('searchChannel').value;
+
+      let allData = getAllData();
+      // Filter
+      let filtered = allData.filter(p => {
+        let match = true;
+
+        if (searchHNName) {
+          const hn = (p.patient_hn || '').toLowerCase();
+          const name = (p.patient_name || '').toLowerCase();
+          if (!hn.includes(searchHNName) && !name.includes(searchHNName)) match = false;
+        }
+        if (searchStatus && p.current_status !== searchStatus) match = false;
+
+        // กรองวันที่: ถ้าเป็น referred ให้ใช้ refer_date ถ้ามี
+        let dateField = p.admit_date || p.admitted_date || (p.current_status === 'referred' ? p.refer_date : '');
+        if (searchDateFrom && dateField) {
+          if (dateField < searchDateFrom) match = false;
+        }
+        if (searchDateTo && dateField) {
+          if (dateField > searchDateTo) match = false;
+        }
+
+        if (searchIMC) {
+          const imc = p.imc_status || '';
+          if (searchIMC === 'IMC' && !imc.includes('IMC')) match = false;
+          if (searchIMC === 'Non-IMC' && imc.includes('IMC')) match = false;
+        }
+
+        if (searchDiagnosis) {
+          const diagnosis = p.diagnosis || '';
+          if (searchDiagnosis === 'etc') {
+            // Check if diagnosis is not in the standard list
+            const standardDiagnoses = ['Stroke', 'SCI(Tetraplegia)', 'SCI(Paraplegia)', 'TBI', 'Hip Fracture'];
+            if (standardDiagnoses.includes(diagnosis)) match = false;
+          } else {
+            if (!diagnosis.includes(searchDiagnosis)) match = false;
+          }
+        }
+
+        if (searchChannel) {
+          const channel = (p.appointment_channel || '').toLowerCase();
+          if (channel !== searchChannel.toLowerCase()) match = false;
+        }
+
+        return match;
+      });
+
+      // Sort by admit_date descending (most recent first)
+      filtered.sort((a, b) => {
+        const dateA = a.admit_date || a.admitted_date || a.booking_date || '';
+        const dateB = b.admit_date || b.admitted_date || b.booking_date || '';
+        return dateB.localeCompare(dateA);
+      });
+
+      displayResults(filtered);
+    }
+
+    function showAllData() {
+      const allData = getAllData();
+      
+      // Sort by admit_date descending (most recent first)
+      allData.sort((a, b) => {
+        const dateA = a.admit_date || a.admitted_date || a.booking_date || '';
+        const dateB = b.admit_date || b.admitted_date || b.booking_date || '';
+        return dateB.localeCompare(dateA);
+      });
+      
+      displayResults(allData);
+    }
+
+    function displayResults(data) {
+      const tbody = document.getElementById('tableBody');
+      const resultCount = document.getElementById('resultCount');
+      
+      resultCount.textContent = data.length;
+
+      if (data.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="10" class="empty-state">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"></circle>
+                <path d="m21 21-4.35-4.35"></path>
+              </svg>
+              <p>ไม่พบข้อมูลที่ค้นหา</p>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = data.map(p => {
+        const statusBadge = getStatusBadge(p.current_status);
+        const doctor = p.doctor_name || p.attending_doctor || '-';
+        const bed = p.assigned_bed || '-';
+        const loggedBy = p.logged_by || p.admitted_by || p.confirmed_by || '-';
+
+        // Calculate date range
+        let dateRange = '-';
+        const admitDate = p.admit_date || p.admitted_date;
+        const dischargeDate = p.discharge_date || p.actual_discharge_date;
+        const referDate = p.refer_date;
+        if (p.current_status === 'referred' && referDate) {
+          // ถ้าเป็น refer ให้แสดงช่วง admit - refer
+          if (admitDate) {
+            dateRange = `${formatDateTH(admitDate)} - ${formatDateTH(referDate)}`;
+          } else {
+            dateRange = formatDateTH(referDate);
+          }
+        } else if (admitDate) {
+          const startDate = formatDateTH(admitDate);
+          if (p.current_status === 'discharged' && dischargeDate) {
+            dateRange = `${startDate} - ${formatDateTH(dischargeDate)}`;
+          } else if (p.current_status === 'admitted') {
+            const today = new Date().toISOString().split('T')[0];
+            dateRange = `${startDate} - ปัจจุบัน`;
+          } else {
+            dateRange = startDate;
+          }
+        }
+
+        // หมายเหตุ: ถ้า cancelled ให้แสดง cancel_reason, ถ้า discharged ให้แสดง discharge_note, ถ้า referred ให้แสดง refer_diagnosis, ถ้าอื่นๆ ให้แสดง notes
+        let note = '-';
+        if (p.current_status === 'cancelled' && p.cancel_reason) {
+          note = p.cancel_reason;
+        } else if (p.current_status === 'discharged' && p.discharge_note) {
+          note = p.discharge_note;
+        } else if (p.current_status === 'referred' && p.refer_diagnosis) {
+          note = p.refer_diagnosis;
+        } else if (p.notes) {
+          note = p.notes;
+        }
+
+        // ช่องทางนัดหมาย: แสดงไอคอนและชื่อช่องทาง
+        function getChannelIconAndName(channel) {
+          const ch = (channel||'').toLowerCase();
+          let icon = '';
+          switch (ch) {
+            case 'opd case':
+              icon = '<span title="OPD case" style="font-size:18px;">🏥</span>';
+              break;
+            case 'ipd case':
+              icon = '<span title="IPD case" style="font-size:18px;">🛏️</span>';
+              break;
+            case 'telemedicine':
+              icon = '<span title="Telemedicine" style="font-size:18px;">💻</span>';
+              break;
+            case 'seamless refer':
+              icon = '<span title="Seamless Refer" style="font-size:18px;">🔗</span>';
+              break;
+            case 'walk in':
+              icon = '<span title="Walk in" style="font-size:18px;">🚶‍♂️</span>';
+              break;
+            default:
+              icon = '';
+          }
+          // Always show both icon and name if available
+          if (icon && channel) {
+            return `${icon} <span style="margin-left:4px;">${channel}</span>`;
+          } else if (channel) {
+            return `<span>${channel}</span>`;
+          } else {
+            return '-';
+          }
+        }
+        const channel = p.appointment_channel || '-';
+
+        return `
+          <tr>
+            <td>${p.patient_hn || '-'}</td>
+            <td>${p.patient_name || '-'}</td>
+            <td>${p.patient_age || p.age || '-'}</td>
+            <td>${p.patient_gender || p.gender || '-'}</td>
+            <td>${p.diagnosis || '-'}</td>
+            <td>${doctor}</td>
+            <td>${dateRange}</td>
+            <td>${bed}</td>
+            <td>${statusBadge}</td>
+            <td>${getChannelIconAndName(channel)}</td>
+            <td>${loggedBy}</td>
+            <td>${note}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function formatDateTH(dateString) {
+      if (!dateString) return '-';
+      const date = new Date(dateString);
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = date.getFullYear() + 543;
+      return `${day}/${month}/${year}`;
+    }
+
+    function getStatusBadge(status) {
+      const badges = {
+        'booked': '<span class="badge badge-booking">Booking</span>',
+        'confirmed': '<span class="badge badge-confirmed">Booking Confirmed</span>',
+        'postponed': '<span class="badge badge-postponed">เลื่อนนัด Admit</span>',
+        'waiting': '<span class="badge badge-booking">รอรับ Admit</span>',
+        'admitted': '<span class="badge badge-admitted">Admitted</span>',
+        'discharged': '<span class="badge badge-discharged">จำหน่ายแล้ว</span>',
+        'referred': '<span class="badge badge-referred">Refer</span>',
+        'resistant_bacteria': '<span class="badge badge-resistant">เชื้อดื้อยา</span>',
+        'cancelled': '<span class="badge badge-cancelled">ยกเลิก</span>'
+      };
+      return badges[status] || '<span class="badge">-</span>';
+    }
+
+    function clearSearch() {
+      document.getElementById('searchHNName').value = '';
+      document.getElementById('searchStatus').value = '';
+      document.getElementById('searchDateFrom').value = '';
+      document.getElementById('searchDateTo').value = '';
+      document.getElementById('searchIMC').value = '';
+      document.getElementById('searchDiagnosis').value = '';
+      
+      const tbody = document.getElementById('tableBody');
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="10" class="empty-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"></circle>
+              <path d="m21 21-4.35-4.35"></path>
+            </svg>
+            <p>กรุณาค้นหาข้อมูลหรือคลิก "แสดงทั้งหมด"</p>
+          </td>
+        </tr>
+      `;
+      document.getElementById('resultCount').textContent = '0';
+    }
+  </script>
+</body>
+</html>

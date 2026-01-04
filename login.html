@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - Smart Bed Admission Planner</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="api-client.js"></script>
+  <script src="user-accounts.js"></script>
+  <style>
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(120deg, #f1fffb 0%, #d6faf1 25%, #abf0e0 60%, #7bd6cd 100%);
+      position: relative;
+      overflow: hidden;
+    }
+    /* Sparkle effect */
+    .sparkle {
+      position: absolute;
+      pointer-events: none;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255,255,255,0.82) 0%, rgba(189,247,233,0.35) 55%, rgba(123,214,205,0.26) 85%, rgba(255,255,255,0) 100%);
+      box-shadow:
+        0 0 20px 6px rgba(255,255,255,0.95),
+        0 0 36px 12px rgba(178,239,227,0.6),
+        0 0 44px 16px rgba(101,208,196,0.35),
+        0 0 58px 20px rgba(218,255,247,0.35),
+        0 0 66px 26px rgba(255,255,255,0.22);
+      opacity: 0.6;
+      filter: blur(0.5px) brightness(1.13);
+      animation: sparkleMove 18s linear infinite;
+      transition: opacity 0.5s;
+    }
+    @keyframes sparkleMove {
+      0% { opacity: 0.2; transform: translateY(0) scale(1); }
+      10% { opacity: 0.5; }
+      90% { opacity: 0.5; }
+      100% { opacity: 0.2; transform: translateY(-12vh) scale(1.05); }
+    }
+    .login-container {
+      background: rgba(255, 255, 255, 0.96);
+      border-radius: 20px;
+      box-shadow: 0 22px 48px rgba(64, 173, 162, 0.22);
+      padding: 46px 38px;
+      max-width: 370px;
+      width: 100%;
+      text-align: center;
+      position: relative;
+      z-index: 1;
+      border: 1.5px solid rgba(134, 221, 208, 0.65);
+      backdrop-filter: blur(10px);
+    }
+    .login-title {
+      font-size: 28px;
+      font-weight: 900;
+      margin-bottom: 12px;
+      letter-spacing: 1.1px;
+      color: #0f645d;
+      text-shadow:
+        0 2px 6px rgba(15, 100, 93, 0.25),
+        0 0 14px rgba(90, 201, 189, 0.45);
+      background: linear-gradient(95deg, #6dd5c2 0%, #39b3a6 45%, #1f8078 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .login-container label,
+    .login-container div,
+    .login-container input,
+    .login-container button {
+      font-family: 'Sarabun', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .login-container {
+      color: #2f5554;
+    }
+    .login-input {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 16px;
+      border-radius: 10px;
+      border: 1.5px solid rgba(123, 214, 205, 0.55);
+      font-size: 16px;
+      color: #266661;
+      background: rgba(240, 253, 251, 0.94);
+      transition: border 0.2s, box-shadow 0.2s, background 0.2s;
+    }
+    .login-input:focus {
+      border: 1.6px solid #45bdb0;
+      outline: none;
+      background: rgba(255,255,255,0.98);
+      box-shadow: 0 0 0 4px rgba(110, 225, 210, 0.28);
+    }
+    .login-input::placeholder {
+      color: #80cfc3;
+      opacity: 1;
+    }
+    .login-btn {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(100deg, #8cf0df 0%, #5fd9c7 45%, #35b8ad 100%);
+      border: none;
+      border-radius: 10px;
+      color: #f3fffd;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.25s, transform 0.2s, box-shadow 0.25s;
+      box-shadow: 0 12px 26px rgba(63, 189, 178, 0.28);
+      margin-top: 8px;
+    }
+    .login-btn:hover {
+      background: linear-gradient(100deg, #abf7ea 0%, #7fe3d3 45%, #46c6b7 100%);
+      color: #ffffff;
+      box-shadow: 0 16px 32px rgba(67, 185, 174, 0.34);
+      transform: translateY(-1px);
+    }
+    .login-error {
+      color: #c62828;
+      font-size: 14px;
+      margin-bottom: 10px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <script>
+    (function runOneTimePatientDataPurge() {
+      if (typeof window === 'undefined') {
+        return;
+      }
+      if (window.__sbpDataPurge) {
+        window.__sbpDataPurge();
+        return;
+      }
+      const FLAG_KEY = 'sbp_data_purged_20260103';
+      const KEYS_TO_CLEAR = [
+        'bookingData',
+        'ipdData',
+        'ipd_female_standard_floor2',
+        'ipd_female_special_floor2',
+        'ipd_male_standard_floor2',
+        'ipd_male_special_floor2',
+        'ipd_active_beds_floor2'
+      ];
+      window.__sbpDataPurge = function __sbpDataPurge() {
+        if (typeof window === 'undefined' || !window.localStorage) {
+          return;
+        }
+        if (localStorage.getItem(FLAG_KEY)) {
+          return;
+        }
+        KEYS_TO_CLEAR.forEach(function(key) {
+          try {
+            localStorage.removeItem(key);
+          } catch (error) {
+            console.warn('Unable to remove key from localStorage:', key, error);
+          }
+        });
+        try {
+          localStorage.setItem(FLAG_KEY, new Date().toISOString());
+        } catch (error) {
+          console.warn('Unable to set purge flag in localStorage:', error);
+        }
+      };
+      window.__sbpDataPurge();
+    })();
+  </script>
+  <!-- Sparkle background effect -->
+  <div id="sparkle-bg"></div>
+  <div class="login-container">
+    <div style="display:flex;flex-direction:column;align-items:center;margin-bottom:12px;">
+      <div class="login-title" style="font-size:20px;margin-bottom:1px;">Smart Bed Admission Planner</div>
+      <div style="color:#0097a7;font-size:15px;font-weight:600;margin-bottom:1px;">Vejjarak Lampang Hospital</div>
+      <div style="color:#00897b;font-size:18px;font-weight:700;letter-spacing:1px;">Login</div>
+    </div>
+    <form id="loginForm" autocomplete="off">
+      <input type="text" id="loginUsername" class="login-input" placeholder="ชื่อผู้ใช้" required autocomplete="username" autofocus>
+      <input type="password" id="loginPassword" class="login-input" placeholder="รหัสผ่าน" required autocomplete="current-password">
+      <div id="loginError" class="login-error"></div>
+      <button type="submit" class="login-btn">Login</button>
+    </form>
+  </div>
+  <script>
+        // Sparkle effect generator (more sparkles, more visible)
+        function createSparkles(num) {
+          const sparkleBg = document.getElementById('sparkle-bg');
+          sparkleBg.innerHTML = '';
+          sparkleBg.style.position = 'fixed';
+          sparkleBg.style.top = 0;
+          sparkleBg.style.left = 0;
+          sparkleBg.style.width = '100vw';
+          sparkleBg.style.height = '100vh';
+          sparkleBg.style.zIndex = 0;
+          for(let i=0;i<num;i++) {
+            const s = document.createElement('div');
+            s.className = 'sparkle';
+            // ขนาดเล็กลงและโปร่งใสมากขึ้น
+            const size = Math.random() * 2.4 + 1.4;
+            s.style.width = size + 'px';
+            s.style.height = size + 'px';
+            s.style.left = Math.random()*100 + 'vw';
+            s.style.top = (Math.random()*100+5) + 'vh';
+            s.style.animationDelay = (Math.random()*18) + 's';
+            s.style.opacity = 0.2 + Math.random()*0.18;
+            s.style.boxShadow = `0 0 ${6+size*2}px ${1+size/2}px rgba(255,255,255,0.94), 0 0 ${12+size*2}px ${1.8+size}px rgba(173,238,225,0.55), 0 0 ${16+size*2}px ${2.2+size}px rgba(90,201,189,0.4)`;
+            sparkleBg.appendChild(s);
+          }
+        }
+        createSparkles(16);
+    (function initLogin() {
+      const loginForm = document.getElementById('loginForm');
+      const usernameInput = document.getElementById('loginUsername');
+      const passwordInput = document.getElementById('loginPassword');
+      const errorDiv = document.getElementById('loginError');
+
+      function findLocalAccount(username, password) {
+        if (!Array.isArray(window.sbpAccountStore)) {
+          return null;
+        }
+        const normalizedUser = (username || '').trim().toLowerCase();
+        const sanitizedPassword = (password || '').trim();
+        if (!normalizedUser || !sanitizedPassword) {
+          return null;
+        }
+        return window.sbpAccountStore.find(function(account) {
+          return account && typeof account.username === 'string' && typeof account.password === 'string' && account.username.trim().toLowerCase() === normalizedUser && account.password === sanitizedPassword;
+        }) || null;
+      }
+
+      function persistSession(authResult) {
+        if (!authResult || !authResult.user || !authResult.user.role) {
+          return false;
+        }
+        const { user, token, tokenType, expiresIn } = authResult;
+        sessionStorage.removeItem('sbp_loginrole');
+        localStorage.removeItem('sbp_loginrole');
+        sessionStorage.removeItem('superuser');
+        sessionStorage.removeItem('nurseipd');
+        sessionStorage.removeItem('nurseopd');
+        sessionStorage.removeItem('nurseopd9');
+        sessionStorage.setItem('app_user_role', user.role);
+        sessionStorage.setItem('app_logged_in', '1');
+        const resolvedName = user.displayName || user.username || '';
+        if (resolvedName) {
+          sessionStorage.setItem('app_user_name', resolvedName);
+        } else {
+          sessionStorage.removeItem('app_user_name');
+        }
+        if (user.id !== undefined) {
+          sessionStorage.setItem('app_user_id', String(user.id));
+        } else {
+          sessionStorage.removeItem('app_user_id');
+        }
+        if (token) {
+          sessionStorage.setItem('app_access_token', token);
+        } else {
+          sessionStorage.removeItem('app_access_token');
+        }
+        if (tokenType) {
+          sessionStorage.setItem('app_token_type', tokenType);
+        } else {
+          sessionStorage.removeItem('app_token_type');
+        }
+        if (expiresIn) {
+          sessionStorage.setItem('app_token_expires_in', String(expiresIn));
+        } else {
+          sessionStorage.removeItem('app_token_expires_in');
+        }
+        window.dispatchEvent(new Event('sbp:role-changed'));
+        return true;
+      }
+
+      if (!loginForm || !passwordInput) {
+        if (errorDiv) {
+          errorDiv.textContent = 'ไม่สามารถเตรียมแบบฟอร์มเข้าสู่ระบบได้';
+          errorDiv.style.display = 'block';
+        }
+        return;
+      }
+
+      loginForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const usernameValue = usernameInput ? usernameInput.value.trim() : '';
+        const passwordValue = passwordInput.value;
+        if (!usernameValue || !passwordValue) {
+          if (errorDiv) {
+            errorDiv.textContent = 'กรุณากรอกชื่อผู้ใช้และรหัสผ่าน';
+            errorDiv.style.display = 'block';
+          }
+          return;
+        }
+
+        const submitButton = loginForm.querySelector('button[type="submit"]');
+        if (submitButton) {
+          submitButton.disabled = true;
+          submitButton.textContent = 'กำลังเข้าสู่ระบบ...';
+        }
+
+        try {
+          let authResult = null;
+          if (window.sbpApiClient && typeof window.sbpApiClient.login === 'function') {
+            try {
+              authResult = await window.sbpApiClient.login(usernameValue, passwordValue);
+            } catch (apiError) {
+              console.warn('API login failed, attempting local fallback', apiError);
+            }
+          }
+
+          if (!authResult) {
+            const localAccount = findLocalAccount(usernameValue, passwordValue);
+            if (localAccount) {
+              authResult = {
+                user: {
+                  ...localAccount,
+                  id: localAccount.id || localAccount.username
+                },
+                token: 'offline-local-token',
+                tokenType: 'local'
+              };
+            }
+          }
+
+          if (!authResult) {
+            throw new Error('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
+          }
+
+          const persisted = persistSession(authResult);
+          if (!persisted) {
+            throw new Error('ไม่สามารถบันทึกสถานะการเข้าสู่ระบบได้');
+          }
+          if (errorDiv) {
+            errorDiv.style.display = 'none';
+            errorDiv.textContent = '';
+          }
+          passwordInput.value = '';
+          if (usernameInput) {
+            usernameInput.value = '';
+          }
+          window.location.href = 'data-archive.html';
+        } catch (error) {
+          const message = error && error.message ? error.message : 'ไม่สามารถเข้าสู่ระบบได้';
+          if (errorDiv) {
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+          }
+        } finally {
+          if (submitButton) {
+            submitButton.disabled = false;
+            submitButton.textContent = 'Login';
+          }
+        }
+      });
+
+      [usernameInput, passwordInput].forEach(function(input) {
+        if (!input) {
+          return;
+        }
+        input.addEventListener('input', function() {
+          if (errorDiv) {
+            errorDiv.style.display = 'none';
+            errorDiv.textContent = '';
+          }
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

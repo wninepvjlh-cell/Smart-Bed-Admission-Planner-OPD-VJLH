@@ -1,0 +1,670 @@
+<!doctype html>
+<html lang="th">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>หอผู้ป่วยใน (IPD) - Smart Bed Admission Planner</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="access-control.js"></script>
+ </head>
+ <body>
+  <button type="button" id="logoutBtn" class="logout-button">Logout</button>
+    <header style="background: linear-gradient(135deg, #80deea 0%, #81c784 100%); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);">
+      <div style="padding: 24px; text-align: center;">
+        <h1 style="font-size: 2.2rem; font-weight: 600; color: white; margin: 0;">Smart Bed Admission Planner</h1>
+        <div style="font-size: 1.2rem; font-weight: 400; color: white;">โรงพยาบาลเวชชารักษ์ ลำปาง</div>
+        <div style="font-size: 1rem; margin-top: 8px; color: rgba(255,255,255,0.9);">เวชศาสตร์ฟื้นฟู - งานการพยาบาลผู้ป่วยนอก</div>
+      </div>
+    </header>
+    <nav style="background: white; padding: 16px 24px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); width: 100%; margin-bottom: 0;">
+      <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+        <div style="display:flex; gap:12px; flex-wrap:wrap; justify-content:center; flex:1 1 auto;">
+          <a class="nav-button" href="dashboard.html" style="padding: 10px 20px; border-radius: 8px; background: white; font-size: 15px; font-weight: 500; color: #00796b; text-decoration: none;">Dashboard</a>
+          <a class="nav-button" href="predict.html" style="padding: 10px 20px; border-radius: 8px; background: white; font-size: 15px; font-weight: 500; color: #00796b;">คาดการณ์วัน Admit เร็วสุด</a>
+          <a class="nav-button" href="booking.html" style="padding: 10px 20px; border-radius: 8px; background: white; font-size: 15px; font-weight: 500; color: #00796b;">จองเตียง Admit</a>
+          <a class="nav-button" href="registry.html" style="padding: 10px 20px; border-radius: 8px; background: white; font-size: 15px; font-weight: 500; color: #00796b;">ทะเบียนจองเตียง</a>
+          <a class="nav-button" href="ipd.html" style="padding: 10px 20px; border-radius: 8px; background: white; font-size: 15px; font-weight: 500; color: #00796b;">หอผู้ป่วยใน(IPD)</a>
+          <a class="nav-button" href="data-archive.html" style="padding: 10px 20px; border-radius: 8px; background: white; font-size: 15px; font-weight: 500; color: #00796b;">คลังข้อมูล</a>
+        </div>
+      </div>
+    </nav>
+  <div class="app-container">
+   <script>
+
+     // ...existing code...
+
+     // Logout function removed
+
+     // Check user role and restrict access
+     window.addEventListener('DOMContentLoaded', function() {
+       const resolvedRole = (window.sbpAccessControl && window.sbpAccessControl.getUserRole()) || sessionStorage.getItem('app_user_role');
+       const storedUserName = sessionStorage.getItem('app_user_name');
+       const userNameLabel = document.getElementById('userName');
+       if (userNameLabel && storedUserName) {
+         userNameLabel.textContent = storedUserName;
+       }
+       
+       // Check if user has access to IPD page
+       if (resolvedRole === 'opd') {
+         alert('คุณไม่มีสิทธิ์เข้าถึงหน้านี้');
+         window.location.href = 'dashboard.html';
+         return;
+       }
+       
+       if (resolvedRole === 'ipd') {
+         // Hide OPD navigation buttons
+         const opdButtons = document.querySelectorAll('.nav-opd');
+         opdButtons.forEach(btn => {
+           btn.style.display = 'none';
+         });
+       }
+       
+       // Auto-load Floor 2 on page load
+       if (typeof showIPDFloor === 'function') {
+         showIPDFloor(2);
+       }
+    });
+   </script>
+   <main style="padding:24px;">
+     <div style="background:white;padding:24px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.08);">
+       <h2 style="color:#00796b;font-size:24px;font-weight:600;margin:0 0 24px 0;">หอผู้ป่วยใน (IPD)</h2>
+       
+       <!-- Floor Selection -->
+       <div style="display:flex;gap:12px;margin-bottom:24px;flex-wrap:wrap;">
+         <button id="btn-floor-1" style="padding:12px 24px;border-radius:8px;background:#e0e0e0;border:2px solid #bdbdbd;cursor:not-allowed;font-size:15px;font-weight:600;color:#999;display:flex;align-items:center;gap:8px;opacity:0.6;">
+           <svg width="18" height="18" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+           ชั้น 1 (Coming Soon)
+         </button>
+         <button onclick="showIPDFloor(2)" id="btn-floor-2" style="padding:12px 24px;border-radius:8px;background:linear-gradient(135deg, #b2ebf2 0%, #c8e6c9 100%);border:2px solid #4dd0e1;cursor:pointer;font-size:15px;font-weight:600;color:#00796b;display:flex;align-items:center;gap:8px;">
+           <svg width="18" height="18" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+           ชั้น 2
+         </button>
+         <button onclick="showActiveBeds()" id="btn-active-beds" style="padding:12px 24px;border-radius:8px;background:white;border:2px solid #bdbdbd;cursor:pointer;font-size:15px;font-weight:600;color:#00796b;display:flex;align-items:center;gap:8px;">
+           <svg width="18" height="18" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="7" width="18" height="10" rx="2"/><path d="M7 7V5a3 3 0 0 1 3-3h4a3 3 0 0 1 3 3v2"/><path d="M5 17v2"/><path d="M19 17v2"/></svg>
+           Active Beds
+         </button>
+       </div>
+
+       <!-- Floor 1 Content -->
+       <div id="floor-1-content" style="display:none;">
+         <!-- Coming Soon Message -->
+         <div style="background:linear-gradient(135deg, #e1f5fe 0%, #b3e5fc 100%);border:2px solid #81d4fa;border-radius:16px;padding:64px 48px;text-align:center;">
+           <svg width="80" height="80" viewbox="0 0 24 24" fill="none" stroke="#0288d1" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" style="margin:0 auto 24px;opacity:0.8;">
+             <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/><path d="M9 2h6M9 22h6"/>
+           </svg>
+           <h3 style="color:#01579b;font-size:32px;font-weight:600;margin:0 0 12px 0;letter-spacing:-0.5px;">Coming Soon</h3>
+           <p style="color:#0277bd;font-size:16px;margin:0;opacity:0.85;line-height:1.6;">หอผู้ป่วยในชั้น 1 กำลังเตรียมเปิดให้บริการ</p>
+         </div>
+       </div>
+       <!-- Floor 2 Content -->
+       <div id="floor-2-content" style="display:block;">
+         <!-- รอรับ Admit Section -->
+         <div style="margin-bottom:32px;">
+           <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">
+             <svg width="20" height="20" viewbox="0 0 24 24" fill="none" stroke="#ff6f00" stroke-width="2"><circle cx="12" cy="12" r="1"/><path d="M12 3v6m4-4v6m-8 0v6"/></svg>
+             <h3 style="color:#ff6f00;font-size:18px;font-weight:600;margin:0;">รอรับ Admit</h3>
+           </div>
+           <div id="floor-2-waiting" style="display:grid;grid-template-columns:repeat(auto-fill, minmax(250px, 1fr));gap:12px;margin-bottom:24px;padding:16px;background:#fff8e1;border-radius:12px;border:1px solid #ffe082;">
+             <!-- Waiting patients for floor 2 will be populated here -->
+           </div>
+         </div>
+
+         <!-- เตียงผู้ป่วย Section -->
+         <div>
+           <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">
+             <svg width="20" height="20" viewbox="0 0 24 24" fill="none" stroke="#00796b" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+             <h3 style="color:#00796b;font-size:18px;font-weight:600;margin:0;">เตียงผู้ป่วย</h3>
+           </div>
+
+           <!-- Summary Cards -->
+           <div id="ipd-active-beds-section" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:16px;margin-bottom:24px;">
+             <!-- Active Beds Card -->
+            <!-- Disease Groups Card -->
+            <div style="background:#ffffff;border-radius:16px;padding:20px;box-shadow:0 6px 24px rgba(33,150,243,0.10);border:1px solid #b2ebf2;transition:all 0.3s ease;">
+              <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+                <div style="background:linear-gradient(135deg,#b2ebf2 0%,#4dd0e1 100%);padding:12px;border-radius:14px;box-shadow:0 4px 16px rgba(33,150,243,0.12);">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0288d1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M8 12h8M12 8v8"/>
+                  </svg>
+                </div>
+                <div>
+                  <p style="color:#4dd0e1;font-size:12px;margin:0;font-weight:500;letter-spacing:0.3px;">Disease Groups (Admit)</p>
+                  <h4 style="color:#0288d1;font-size:20px;font-weight:700;margin:4px 0 0 0;letter-spacing:-0.5px;">กลุ่มโรคหลัก <span style="font-size:14px;font-weight:500;color:#4dd0e1;">(IMC : Non-IMC)</span></h4>
+                </div>
+              </div>
+              <div id="ipd-disease-groups-list" style="font-size:14px;color:#0288d1;font-weight:600;display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;"></div>
+            </div>
+            <script>
+            // Disease Groups Card: Show admit counts by 6 groups (floor 2 only), with IMC/Non-IMC breakdown
+            function updateDiseaseGroupsCard() {
+              const el = document.getElementById('ipd-disease-groups-list');
+              if (!el) return;
+              const labels = [
+                'Stroke',
+                'SCI (Tetraplegia)',
+                'SCI (Paraplegia)',
+                'TBI',
+                'Hip fracture',
+                'อื่นๆ'
+              ];
+              const bookingData = JSON.parse(localStorage.getItem('bookingData')) || { admitted: [] };
+              const patients = (bookingData.admitted || []).filter(p => p.floor === 'floor2' && p.admit_status === 'admitted');
+              // [ [imc, nonimc], ... ]
+              const counts = Array.from({length: 6}, () => [0, 0]);
+              function getGroupIdx(diagnosis) {
+                if (!diagnosis) return 5;
+                const diag = diagnosis.toLowerCase();
+                if (diag.includes('stroke')) return 0;
+                if (diag.includes('tetra')) return 1;
+                if (diag.includes('para')) return 2;
+                if (diag.includes('tbi')) return 3;
+                if (diag.includes('hip')) return 4;
+                return 5;
+              }
+              function isIMC(p) {
+                return (p.imc_status || p.imc || '').toString().toUpperCase() === 'IMC';
+              }
+              patients.forEach(p => {
+                const idx = getGroupIdx(p.diagnosis);
+                if (isIMC(p)) {
+                  counts[idx][0]++;
+                } else {
+                  counts[idx][1]++;
+                }
+              });
+              el.innerHTML = labels.map((label, i) =>
+                `<span>${label}</span><span style='text-align:right;'>${counts[i][0]} : ${counts[i][1]} ราย</span>`
+              ).join('');
+            }
+            updateDiseaseGroupsCard();
+            setInterval(updateDiseaseGroupsCard, 5000);
+            window.addEventListener('storage', function(e) {
+              if (e.key === 'bookingData') updateDiseaseGroupsCard();
+            });
+            </script>
+             <div style="background:#ffffff;border-radius:16px;padding:20px;box-shadow:0 6px 24px rgba(128,222,234,0.12);border:1px solid rgba(128,222,234,0.2);transition:all 0.3s ease;">
+               <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+                 <div style="background:linear-gradient(135deg,#b2ebf2 0%,#80deea 100%);padding:12px;border-radius:14px;box-shadow:0 4px 16px rgba(128,222,234,0.25);">
+                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00838f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                     <rect x="2" y="7" width="20" height="14" rx="2"/>
+                     <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+                     <path d="M12 11v6"/>
+                   </svg>
+                 </div>
+                 <div>
+                   <p style="color:#80cbc4;font-size:12px;margin:0;font-weight:500;letter-spacing:0.3px;">Active Beds</p>
+                   <h4 id="ipd-active-beds" style="color:#00897b;font-size:28px;font-weight:700;margin:4px 0 0 0;letter-spacing:-0.5px;">0</h4>
+                 </div>
+               </div>
+               <p style="color:#80cbc4;font-size:12px;margin:0;font-weight:400;">/ <span id="ipd-total-beds">18</span> เตียงทั้งหมด</p>
+             </div>
+
+             <!-- Total Patients Card -->
+             <div style="background:#ffffff;border-radius:16px;padding:20px;box-shadow:0 6px 24px rgba(129,199,132,0.12);border:1px solid rgba(129,199,132,0.2);transition:all 0.3s ease;">
+               <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+                 <div style="background:linear-gradient(135deg,#c8e6c9 0%,#a5d6a7 100%);padding:12px;border-radius:14px;box-shadow:0 4px 16px rgba(129,199,132,0.25);">
+                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2e7d32" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                     <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                     <circle cx="9" cy="7" r="4"/>
+                     <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                     <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                   </svg>
+                 </div>
+                 <div>
+                   <p style="color:#81c784;font-size:12px;margin:0;font-weight:500;letter-spacing:0.3px;">ผู้ป่วยทั้งหมด</p>
+                   <h4 id="ipd-total-patients" style="color:#388e3c;font-size:28px;font-weight:700;margin:4px 0 0 0;letter-spacing:-0.5px;">0</h4>
+                 </div>
+               </div>
+               <p style="color:#81c784;font-size:12px;margin:0;font-weight:400;">ผู้ป่วยใน IPD</p>
+             </div>
+
+             <!-- Female Patients Card -->
+             <div style="background:#ffffff;border-radius:16px;padding:20px;box-shadow:0 6px 24px rgba(240,98,146,0.12);border:1px solid rgba(240,98,146,0.2);transition:all 0.3s ease;">
+               <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+                 <div style="background:linear-gradient(135deg,#f8bbd0 0%,#f48fb1 100%);padding:12px;border-radius:14px;box-shadow:0 4px 16px rgba(240,98,146,0.25);">
+                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#c2185b" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                     <circle cx="12" cy="8" r="5"/>
+                     <path d="M12 13v8"/>
+                     <path d="M8 21h8"/>
+                   </svg>
+                 </div>
+                 <div>
+                   <p style="color:#f48fb1;font-size:12px;margin:0;font-weight:500;letter-spacing:0.3px;">เพศหญิง</p>
+                   <h4 id="ipd-female-count" style="color:#d81b60;font-size:28px;font-weight:700;margin:4px 0 0 0;letter-spacing:-0.5px;">0</h4>
+                <div style="font-size:13px; color:#d81b60; font-weight:500; margin-top:2px;">
+                  <span id="ipd-female-standard">-</span> สามัญ,
+                  <span id="ipd-female-special">-</span> พิเศษ
+                </div>
+                 </div>
+               </div>
+               <p style="color:#f48fb1;font-size:12px;margin:0;font-weight:400;">Female Patients</p>
+             </div>
+
+             <!-- Male Patients Card -->
+             <div style="background:#ffffff;border-radius:16px;padding:20px;box-shadow:0 6px 24px rgba(77,208,225,0.12);border:1px solid rgba(77,208,225,0.2);transition:all 0.3s ease;">
+               <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+                 <div style="background:linear-gradient(135deg,#b2ebf2 0%,#80deea 100%);padding:12px;border-radius:14px;box-shadow:0 4px 16px rgba(77,208,225,0.25);">
+                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00838f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                     <circle cx="10" cy="10" r="5"/>
+                     <path d="M21 3l-6 6"/>
+                     <path d="M15 3h6v6"/>
+                   </svg>
+                 </div>
+                 <div>
+                   <p style="color:#4dd0e1;font-size:12px;margin:0;font-weight:500;letter-spacing:0.3px;">เพศชาย</p>
+                   <h4 id="ipd-male-count" style="color:#00acc1;font-size:28px;font-weight:700;margin:4px 0 0 0;letter-spacing:-0.5px;">0</h4>
+                <div style="font-size:13px; color:#00acc1; font-weight:500; margin-top:2px;">
+                  <span id="ipd-male-standard">-</span> สามัญ,
+                  <span id="ipd-male-special">-</span> พิเศษ
+                </div>
+                 </div>
+               </div>
+               <p style="color:#4dd0e1;font-size:12px;margin:0;font-weight:400;">Male Patients</p>
+             </div>
+           </div>
+
+
+           <div style="margin-bottom:20px;">
+             <h4 style="color:#00796b;font-size:15px;font-weight:600;margin:0 0 12px 0;">เตียงสามัญ (B4 - B12, B14 - B16)</h4>
+             <div id="floor-2-standard-list" style="display:grid;grid-template-columns:repeat(6, 1fr);gap:12px;">
+               <!-- Standard beds for floor 2 will be populated here -->
+             </div>
+           </div>
+           <div>
+             <h4 style="color:#00796b;font-size:15px;font-weight:600;margin:0 0 12px 0;">ห้องพิเศษ (V1 - V6)</h4>
+             <div id="floor-2-special-list" style="display:grid;grid-template-columns:repeat(6, 1fr);gap:12px;">
+               <!-- Special rooms for floor 2 will be populated here -->
+             </div>
+           </div>
+         </div>
+          </div>
+
+          <div id="active-beds-content" style="display:none;margin-top:32px;">
+            <section id="active-beds-calendar-container" style="background:linear-gradient(135deg,rgba(224,247,250,0.92) 0%,rgba(232,245,233,0.92) 50%,rgba(241,248,233,0.95) 100%);border-radius:18px;padding:24px 24px 28px 24px;box-shadow:0 10px 28px rgba(0,150,136,0.12);border:1px solid rgba(77,208,225,0.25);margin-bottom:28px;">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:20px;flex-wrap:wrap;">
+                <div style="display:flex;align-items:center;gap:14px;">
+                  <div style="width:44px;height:44px;border-radius:14px;background:linear-gradient(135deg,rgba(178,235,242,0.8) 0%,rgba(129,199,132,0.8) 100%);display:flex;align-items:center;justify-content:center;box-shadow:0 5px 16px rgba(0,150,136,0.2);">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#006064" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="3" y="4" width="18" height="18" rx="4" ry="4"/>
+                      <line x1="16" y1="2" x2="16" y2="6"/>
+                      <line x1="8" y1="2" x2="8" y2="6"/>
+                      <line x1="3" y1="10" x2="21" y2="10"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <h4 style="margin:0;font-size:20px;font-weight:700;color:#006064;">Active Beds Calendar</h4>
+                    <p style="margin:4px 0 0 0;font-size:13px;color:#00796b;font-weight:500;">ยอดผู้ป่วย Admit ชั้น 2 แยกตามวันที่</p>
+                  </div>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <button type="button" onclick="changeActiveBedsCalendarMonth(-1)" style="width:36px;height:36px;border-radius:10px;border:none;background:linear-gradient(135deg,#b2ebf2 0%,#80cbc4 100%);color:#006064;font-size:18px;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(77,208,225,0.25);">‹</button>
+                  <div id="activeBedsCalendarMonthLabel" style="min-width:140px;text-align:center;font-size:16px;font-weight:700;color:#004d40;"></div>
+                  <button type="button" onclick="changeActiveBedsCalendarMonth(1)" style="width:36px;height:36px;border-radius:10px;border:none;background:linear-gradient(135deg,#80cbc4 0%,#4db6ac 100%);color:white;font-size:18px;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(76,175,80,0.2);">›</button>
+                </div>
+              </div>
+              <div id="activeBedsCalendarGrid" style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:12px;"></div>
+              <div id="activeBedsCalendarEmptyState" style="display:none;margin-top:16px;font-size:0.95rem;color:#607d8b;font-weight:500;text-align:center;">ยังไม่มีข้อมูลการ Admit ในเดือนนี้</div>
+              <div style="margin-top:18px;font-size:12px;color:#006064;display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;align-items:center;">
+                <span>ข้อมูลอัปเดตเมื่อมีการ Admit/Discharge ผู้ป่วยแต่ละวัน</span>
+                <span style="display:flex;align-items:center;gap:10px;">
+                  <span style="display:inline-flex;align-items:center;gap:6px;">
+                    <span style="width:20px;height:20px;border-radius:8px;border:1px solid rgba(0,150,136,0.35);background:linear-gradient(135deg,#b2ebf2 0%,#a5d6a7 100%);"></span>
+                    <span style="color:#004d40;font-weight:600;">จำนวนสูง</span>
+                  </span>
+                  <span style="display:inline-flex;align-items:center;gap:6px;">
+                    <span style="width:20px;height:20px;border-radius:8px;border:1px solid rgba(0,0,0,0.08);background:linear-gradient(135deg,#f5f7fa 0%,#eceff1 100%);"></span>
+                    <span style="color:#546e7a;font-weight:500;">ไม่มีผู้ป่วย</span>
+                  </span>
+                </span>
+              </div>
+            </section>
+       </div>
+     </div>
+   </main>
+  </div>
+
+  <!-- Patient Details Modal -->
+  <div id="patient-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);z-index:1000;align-items:center;justify-content:center;">
+   <div style="background:linear-gradient(135deg, #ffffff 0%, #f5f5f5 100%);padding:18px;border-radius:14px;max-width:360px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.8);max-height:90vh;overflow-y:auto;">
+     
+     <!-- Header with Patient Name -->
+     <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;padding-bottom:10px;border-bottom:2px solid #e0e0e0;">
+       <div style="background:linear-gradient(135deg, #00897b 0%, #00796b 100%);width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,137,123,0.3);">
+         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+           <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+           <circle cx="12" cy="7" r="4"></circle>
+         </svg>
+       </div>
+       <div style="flex:1;">
+         <h3 id="modal-patient-name" style="color:#00796b;font-size:15px;font-weight:700;margin:0;letter-spacing:-0.3px;"></h3>
+         <p style="color:#999;font-size:9px;margin:2px 0 0 0;font-weight:500;">ข้อมูลผู้ป่วยใน</p>
+       </div>
+     </div>
+
+     <!-- Patient Information Grid -->
+     <div style="display:grid;gap:7px;margin-bottom:12px;">
+       
+       <!-- HN -->
+       <div style="background:white;padding:7px 9px;border-radius:8px;border:1px solid #e0e0e0;display:flex;align-items:center;gap:7px;">
+         <div style="background:#e8f5e9;width:22px;height:22px;border-radius:5px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#43a047" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+             <polyline points="14 2 14 8 20 8"></polyline>
+           </svg>
+         </div>
+         <div style="flex:1;">
+           <p style="font-size:8px;color:#999;margin:0 0 1px 0;font-weight:600;text-transform:uppercase;">HN</p>
+           <p id="modal-patient-hn" style="font-size:11px;color:#333;margin:0;font-weight:600;"></p>
+         </div>
+       </div>
+
+       <!-- Age and Gender -->
+       <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;">
+         <div style="background:white;padding:7px 9px;border-radius:8px;border:1px solid #e0e0e0;display:flex;align-items:center;gap:6px;">
+           <div style="background:#e3f2fd;width:22px;height:22px;border-radius:5px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1976d2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+               <circle cx="12" cy="7" r="4"></circle>
+             </svg>
+           </div>
+           <div style="flex:1;">
+             <p style="font-size:8px;color:#999;margin:0 0 1px 0;font-weight:600;">อายุ</p>
+             <p id="modal-patient-age" style="font-size:11px;color:#333;margin:0;font-weight:600;"></p>
+           </div>
+         </div>
+         <div style="background:white;padding:7px 9px;border-radius:8px;border:1px solid #e0e0e0;display:flex;align-items:center;gap:6px;">
+           <div style="background:#f3e5f5;width:22px;height:22px;border-radius:5px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#7b1fa2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+               <circle cx="12" cy="12" r="10"></circle>
+             </svg>
+           </div>
+           <div style="flex:1;">
+             <p style="font-size:8px;color:#999;margin:0 0 1px 0;font-weight:600;">เพศ</p>
+             <p id="modal-patient-gender" style="font-size:11px;color:#333;margin:0;font-weight:600;"></p>
+           </div>
+         </div>
+       </div>
+
+       <!-- Phone -->
+       <div style="background:white;padding:7px 9px;border-radius:8px;border:1px solid #e0e0e0;display:flex;align-items:center;gap:7px;">
+         <div style="background:#fff3e0;width:22px;height:22px;border-radius:5px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#f57c00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+             <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+           </svg>
+         </div>
+         <div style="flex:1;">
+           <p style="font-size:8px;color:#999;margin:0 0 1px 0;font-weight:600;text-transform:uppercase;">เบอร์โทร</p>
+           <p id="modal-patient-phone" style="font-size:11px;color:#333;margin:0;font-weight:600;"></p>
+         </div>
+       </div>
+
+       <!-- Diagnosis -->
+       <div style="background:white;padding:7px 9px;border-radius:8px;border:1px solid #e0e0e0;display:flex;align-items:center;gap:7px;">
+         <div style="background:#fce4ec;width:22px;height:22px;border-radius:5px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#c2185b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+             <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+           </svg>
+         </div>
+         <div style="flex:1;">
+           <p style="font-size:8px;color:#999;margin:0 0 1px 0;font-weight:600;text-transform:uppercase;">Diagnosis</p>
+           <p id="modal-patient-diagnosis" style="font-size:11px;color:#333;margin:0;font-weight:600;"></p>
+         </div>
+       </div>
+
+       <!-- Disease Onset and IMC Status -->
+       <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;">
+         <div style="background:white;padding:7px 9px;border-radius:8px;border:1px solid #e0e0e0;">
+           <p style="font-size:8px;color:#999;margin:0 0 2px 0;font-weight:600;">วันเกิดโรค</p>
+           <p id="modal-disease-onset" style="font-size:10px;color:#333;margin:0;font-weight:600;"></p>
+         </div>
+         <div style="background:white;padding:7px 9px;border-radius:8px;border:1px solid #e0e0e0;">
+           <p style="font-size:8px;color:#999;margin:0 0 2px 0;font-weight:600;">IMC</p>
+           <p id="modal-imc-status" style="font-size:10px;margin:0;font-weight:700;"></p>
+         </div>
+       </div>
+
+       <!-- เชื้อดื้อยา (Resistant Bacteria) -->
+       <div style="background:white;padding:7px 9px;border-radius:8px;border:1px solid #e0e0e0;margin-top:7px;">
+         <label style="font-size:8px;color:#999;margin:0 0 4px 0;display:block;font-weight:600;">เชื้อดื้อยา</label>
+         <div id="modal-culture-section">
+           <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+             <input type="checkbox" id="modal-culture-mrsa" style="accent-color:#d32f2f;"> <label for="modal-culture-mrsa" style="font-size:11px;color:#d32f2f;font-weight:600;">MRSA</label>
+             <input type="checkbox" id="modal-culture-vre" style="accent-color:#7b1fa2;"> <label for="modal-culture-vre" style="font-size:11px;color:#7b1fa2;font-weight:600;">VRE</label>
+             <input type="checkbox" id="modal-culture-cre" style="accent-color:#0288d1;"> <label for="modal-culture-cre" style="font-size:11px;color:#0288d1;font-weight:600;">CRE</label>
+             <input type="checkbox" id="modal-culture-esbl" style="accent-color:#fbc02d;"> <label for="modal-culture-esbl" style="font-size:11px;color:#fbc02d;font-weight:600;">ESBL</label>
+           </div>
+           <input type="text" id="modal-culture-other" placeholder="อื่นๆ (ระบุ)" style="width:100%;padding:5px 8px;border:1px solid #e0e0e0;border-radius:6px;font-size:11px;color:#333;background:white;box-sizing:border-box;">
+         </div>
+       </div>
+
+       <!-- Bed Selection -->
+       <div style="background:white;padding:7px 9px;border-radius:8px;border:1px solid #e0e0e0;">
+         <label style="font-size:8px;color:#999;margin:0 0 4px 0;display:block;font-weight:600;">เลขเตียง</label>
+         <select id="modal-patient-bed" style="width:100%;padding:6px 8px;border:2px solid #e0e0e0;border-radius:6px;font-size:11px;font-weight:600;color:#333;background:white;box-sizing:border-box;">
+           <option value="">เลือกเตียง</option>
+         </select>
+       </div>
+
+       <!-- Doctor Selection -->
+       <div style="background:white;padding:7px 9px;border-radius:8px;border:1px solid #e0e0e0;">
+         <label style="font-size:8px;color:#999;margin:0 0 4px 0;display:block;font-weight:600;">แพทย์เจ้าของไข้</label>
+         <select id="modal-patient-doctor" style="width:100%;padding:6px 8px;border:2px solid #e0e0e0;border-radius:6px;font-size:11px;font-weight:600;color:#333;background:white;box-sizing:border-box;">
+           <option value="">เลือกแพทย์</option>
+           <option value="นพ.ธนภูมิ ลัดดาชยาพร">นพ.ธนภูมิ ลัดดาชยาพร</option>
+           <option value="นพ.ณัชพล ผลกันทา">นพ.ณัชพล ผลกันทา</option>
+           <option value="นพ.ทรัพย์ ตั้งพานิชยานนท์">นพ.ทรัพย์ ตั้งพานิชยานนท์</option>
+         </select>
+       </div>
+
+       <!-- Admitted Date -->
+       <div style="background:white;padding:7px 9px;border-radius:8px;border:1px solid #e0e0e0;display:flex;align-items:center;gap:7px;">
+         <div style="background:#e8eaf6;width:22px;height:22px;border-radius:5px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#3f51b5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+             <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+             <line x1="16" y1="2" x2="16" y2="6"></line>
+             <line x1="8" y1="2" x2="8" y2="6"></line>
+             <line x1="3" y1="10" x2="21" y2="10"></line>
+           </svg>
+         </div>
+         <div style="flex:1;">
+           <p style="font-size:8px;color:#999;margin:0 0 1px 0;font-weight:600;">Admit</p>
+           <p id="modal-patient-admitted-date" style="font-size:11px;color:#333;margin:0;font-weight:600;"></p>
+         </div>
+       </div>
+
+       <!-- LOS (Length of Stay) -->
+       <div style="background:white;padding:7px 9px;border-radius:8px;border:1px solid #e0e0e0;display:flex;align-items:center;gap:7px;">
+         <div style="background:#e1f5fe;width:22px;height:22px;border-radius:5px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0288d1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+             <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+             <line x1="12" y1="8" x2="12" y2="16"></line>
+             <line x1="8" y1="12" x2="16" y2="12"></line>
+           </svg>
+         </div>
+         <div style="flex:1;">
+           <p style="font-size:8px;color:#999;margin:0 0 1px 0;font-weight:600;">LOS (วัน)</p>
+           <p id="modal-patient-los" style="font-size:11px;color:#0288d1;margin:0;font-weight:700;"></p>
+         </div>
+       </div>
+
+       <!-- Discharge Date -->
+       <div style="background:white;padding:7px 9px;border-radius:8px;border:1px solid #e0e0e0;">
+         <label style="font-size:8px;color:#999;margin:0 0 4px 0;display:block;font-weight:600;">วันจำหน่าย</label>
+         <input type="date" id="modal-patient-discharge-date" style="width:100%;padding:6px 8px;border:2px solid #e0e0e0;border-radius:6px;font-size:11px;font-weight:600;color:#333;background:white;box-sizing:border-box;">
+       </div>
+
+       <!-- Notes -->
+       <div style="background:white;padding:7px 9px;border-radius:8px;border:1px solid #e0e0e0;">
+         <label style="font-size:8px;color:#999;margin:0 0 4px 0;display:block;font-weight:600;">หมายเหตุ (ถ้ามี)</label>
+         <textarea id="modal-patient-notes" rows="3" style="width:100%;padding:6px 8px;border:2px solid #e0e0e0;border-radius:6px;font-size:11px;font-weight:500;color:#333;background:white;box-sizing:border-box;resize:vertical;" placeholder="ระบุหมายเหตุเพิ่มเติม"></textarea>
+       </div>
+
+     </div>
+
+     <!-- Action Buttons -->
+     <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px;">
+       <button onclick="closePatientModal()" style="padding:7px;border-radius:8px;background:#f5f5f5;border:2px solid #e0e0e0;cursor:pointer;font-size:11px;font-weight:700;color:#666;display:flex;align-items:center;justify-content:center;gap:4px;">
+         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+           <line x1="18" y1="6" x2="6" y2="18"></line>
+           <line x1="6" y1="6" x2="18" y2="18"></line>
+         </svg>
+         ปิด
+       </button>
+       <button onclick="savePatientChanges()" style="padding:7px;border-radius:8px;background:linear-gradient(135deg, #66bb6a 0%, #43a047 100%);border:none;cursor:pointer;font-size:11px;font-weight:700;color:white;box-shadow:0 3px 8px rgba(67,160,71,0.3);display:flex;align-items:center;justify-content:center;gap:4px;">
+         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+           <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+           <polyline points="17 21 17 13 7 13 7 21"></polyline>
+           <polyline points="7 3 7 8 15 8"></polyline>
+         </svg>
+         บันทึก
+       </button>
+       <button onclick="openReferModal()" style="padding:7px;border-radius:8px;background:linear-gradient(135deg, #42a5f5 0%, #1976d2 100%);border:none;cursor:pointer;font-size:11px;font-weight:700;color:white;box-shadow:0 3px 8px rgba(25,118,210,0.3);display:flex;align-items:center;justify-content:center;gap:4px;">
+         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+           <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+           <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+         </svg>
+         Refer
+       </button>
+       <button id="discharge-btn" onclick="dischargePatient()" style="padding:7px;border-radius:8px;background:linear-gradient(135deg, #ef5350 0%, #c62828 100%);border:none;cursor:pointer;font-size:11px;font-weight:700;color:white;box-shadow:0 3px 8px rgba(198,40,40,0.3);display:flex;align-items:center;justify-content:center;gap:4px;grid-column:1/-1;">
+         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+           <polyline points="9 11 12 14 22 4"></polyline>
+           <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+         </svg>
+         จำหน่าย
+       </button>
+     </div>
+
+   </div>
+     
+   </div>
+  </div>
+
+  <!-- Refer Modal -->
+  <div id="refer-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);z-index:1001;align-items:center;justify-content:center;">
+   <div style="background:linear-gradient(135deg, #ffffff 0%, #f5f5f5 100%);padding:40px;border-radius:24px;max-width:550px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.8);">
+     
+     <!-- Header -->
+     <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px;padding-bottom:20px;border-bottom:2px solid #e0e0e0;">
+       <div style="background:linear-gradient(135deg, #1e88e5 0%, #1976d2 100%);width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(30,136,229,0.3);">
+         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+           <circle cx="12" cy="12" r="10"></circle>
+           <polyline points="12 6 12 12 16 14"></polyline>
+         </svg>
+       </div>
+       <div style="flex:1;">
+         <h3 style="color:#1976d2;font-size:22px;font-weight:700;margin:0;letter-spacing:-0.5px;">📋 Refer ผู้ป่วย</h3>
+         <p style="color:#999;font-size:13px;margin:4px 0 0 0;font-weight:500;">ส่งต่อผู้ป่วยไปยังสถานพยาบาลอื่น</p>
+       </div>
+     </div>
+
+     <!-- Patient Info Cards -->
+     <div style="display:grid;gap:12px;margin-bottom:20px;">
+       <div style="background:white;padding:14px;border-radius:12px;border:1px solid #e0e0e0;display:flex;align-items:center;gap:12px;">
+         <div style="background:#e8f5e9;width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#43a047" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+             <circle cx="12" cy="7" r="4"></circle>
+           </svg>
+         </div>
+         <div style="flex:1;">
+           <p style="font-size:11px;color:#999;margin:0 0 4px 0;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">ชื่อผู้ป่วย</p>
+           <p id="refer-patient-name" style="font-size:15px;color:#333;margin:0;font-weight:700;"></p>
+         </div>
+       </div>
+       
+       <div style="background:white;padding:14px;border-radius:12px;border:1px solid #e0e0e0;display:flex;align-items:center;gap:12px;">
+         <div style="background:#e3f2fd;width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1976d2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+             <polyline points="14 2 14 8 20 8"></polyline>
+           </svg>
+         </div>
+         <div style="flex:1;">
+           <p style="font-size:11px;color:#999;margin:0 0 4px 0;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">HN</p>
+           <p id="refer-patient-hn" style="font-size:15px;color:#333;margin:0;font-weight:700;"></p>
+         </div>
+       </div>
+     </div>
+
+     <!-- Form Fields -->
+     <div style="display:grid;gap:16px;margin-bottom:28px;">
+       
+       <!-- Hospital Selection -->
+       <div style="background:white;padding:16px;border-radius:12px;border:1px solid #e0e0e0;">
+         <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+           <div style="background:#fff3e0;width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f57c00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+               <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+               <polyline points="9 22 9 12 15 12 15 22"></polyline>
+             </svg>
+           </div>
+           <label style="font-size:11px;color:#333;margin:0;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">โรงพยาบาลที่ส่งต่อ *</label>
+         </div>
+         <select id="refer-hospital" required style="width:100%;padding:12px 16px;border:2px solid #e0e0e0;border-radius:10px;font-size:15px;font-weight:600;color:#333;background:white;box-sizing:border-box;transition:all 0.3s;cursor:pointer;">
+           <option value="">-- เลือกโรงพยาบาล --</option>
+           <option value="รพ.เกาะคา">รพ.เกาะคา</option>
+           <option value="รพ.ลำปาง">รพ.ลำปาง</option>
+           <option value="other">อื่นๆ (โปรดระบุ)</option>
+         </select>
+       </div>
+
+       <!-- Hospital Other Input -->
+       <div id="refer-hospital-other-container" style="display:none;background:white;padding:16px;border-radius:12px;border:1px solid #e0e0e0;">
+         <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+           <div style="background:#fce4ec;width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#c2185b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+               <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+               <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+             </svg>
+           </div>
+           <label style="font-size:11px;color:#333;margin:0;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">ระบุโรงพยาบาล</label>
+         </div>
+         <input type="text" id="refer-hospital-other" placeholder="ระบุชื่อโรงพยาบาล" style="width:100%;padding:12px 16px;border:2px solid #e0e0e0;border-radius:10px;font-size:15px;font-weight:500;color:#333;background:white;box-sizing:border-box;transition:all 0.3s;">
+       </div>
+
+       <!-- R/O Diagnosis -->
+       <div style="background:white;padding:16px;border-radius:12px;border:1px solid #e0e0e0;">
+         <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+           <div style="background:#f3e5f5;width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7b1fa2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+               <polyline points="14 2 14 8 20 8"></polyline>
+               <line x1="16" y1="13" x2="8" y2="13"></line>
+               <line x1="16" y1="17" x2="8" y2="17"></line>
+             </svg>
+           </div>
+           <label style="font-size:11px;color:#333;margin:0;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">R/O Diagnosis *</label>
+         </div>
+         <textarea id="refer-diagnosis" required placeholder="ระบุ R/O Diagnosis" style="width:100%;padding:12px 16px;border:2px solid #e0e0e0;border-radius:10px;font-size:15px;font-weight:500;color:#333;background:white;box-sizing:border-box;min-height:100px;resize:vertical;transition:all 0.3s;font-family:inherit;"></textarea>
+       </div>
+
+     </div>
+
+     <!-- Action Buttons -->
+     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+       <button onclick="closeReferModal()" style="padding:14px;border-radius:12px;background:#f5f5f5;border:2px solid #e0e0e0;cursor:pointer;font-size:15px;font-weight:700;color:#666;transition:all 0.3s;display:flex;align-items:center;justify-content:center;gap:8px;">
+         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+           <line x1="18" y1="6" x2="6" y2="18"></line>
+           <line x1="6" y1="6" x2="18" y2="18"></line>
+         </svg>
+         ยกเลิก
+       </button>
+       <button onclick="confirmRefer()" style="padding:14px;border-radius:12px;background:linear-gradient(135deg, #42a5f5 0%, #1976d2 100%);border:none;cursor:pointer;font-size:15px;font-weight:700;color:white;transition:all 0.3s;box-shadow:0 4px 12px rgba(25,118,210,0.3);display:flex;align-items:center;justify-content:center;gap:8px;">
+         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+           <polyline points="20 6 9 17 4 12"></polyline>
+         </svg>
+         ยืนยัน Refer
+       </button>
+     </div>
+
+   </div>
+  </div>
+
+
+  <footer style="background: linear-gradient(135deg,#80deea 0%,#81c784 100%); padding:20px;text-align:center;width:100%;"><p style="color:white;font-size:14px;margin:0;">© 2024 งานการพยาบาลผู้ป่วยนอก โรงพยาบาลเวชชารักษ์ ลำปาง | Smart Bed Admission Planner</p></footer>
+
+  <script src="ipd-functions.js"></script>
+ </body>
+</html>

@@ -1,0 +1,476 @@
+<!doctype html>
+<html lang="th">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ทะเบียนจองเตียง - Smart Bed Admission Planner</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="access-control.js"></script>
+ </head>
+ <body>
+  <button type="button" id="logoutBtn" class="logout-button">Logout</button>
+    <!-- Header and Main Navigation -->
+    <header style="background: linear-gradient(135deg, #80deea 0%, #81c784 100%); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);">
+      <div style="padding: 24px; text-align: center;">
+        <h1 style="font-size: 2.2rem; font-weight: 600; color: white; margin: 0;">Smart Bed Admission Planner</h1>
+        <div style="font-size: 1.2rem; font-weight: 400; color: white;">โรงพยาบาลเวชชารักษ์ ลำปาง</div>
+        <div style="font-size: 1rem; margin-top: 8px; color: rgba(255,255,255,0.9);">เวชศาสตร์ฟื้นฟู - งานการพยาบาลผู้ป่วยนอก</div>
+      </div>
+    </header>
+    <nav style="background: white; padding: 16px 24px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); width: 100%; margin-bottom: 0;">
+      <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+        <div style="display:flex; gap:12px; flex-wrap:wrap; justify-content:center; flex:1 1 auto;">
+          <a class="nav-button" href="dashboard.html" style="padding: 10px 20px; border-radius: 8px; background: white; font-size: 15px; font-weight: 500; color: #00796b; text-decoration: none;">Dashboard</a>
+          <a class="nav-button" href="predict.html" style="padding: 10px 20px; border-radius: 8px; background: white; font-size: 15px; font-weight: 500; color: #00796b;">คาดการณ์วัน Admit เร็วสุด</a>
+          <a class="nav-button" href="booking.html" style="padding: 10px 20px; border-radius: 8px; background: white; font-size: 15px; font-weight: 500; color: #00796b;">จองเตียง Admit</a>
+          <a class="nav-button active" href="registry.html" onclick="location.reload()" style="padding: 10px 20px; border-radius: 8px; background: white; font-size: 15px; font-weight: 500; color: #00796b;">ทะเบียนจองเตียง</a>
+          <a class="nav-button" href="ipd.html" style="padding: 10px 20px; border-radius: 8px; background: white; font-size: 15px; font-weight: 500; color: #00796b;">หอผู้ป่วยใน(IPD)</a>
+          <a class="nav-button" href="data-archive.html" style="padding: 10px 20px; border-radius: 8px; background: white; font-size: 15px; font-weight: 500; color: #00796b;">คลังข้อมูล</a>
+        </div>
+      </div>
+    </nav>
+  <div class="app-container">
+   <!-- Removed all user role-based access control scripts to allow normal page rendering for all users -->
+   <main style="padding:24px;">
+     <div style="background:white;padding:24px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.08);">
+       <h2 style="color:#00796b;font-size:22px;margin:0 0 12px 0;">ทะเบียนจองเตียง</h2>
+       
+       <!-- Subtab Navigation -->
+       <div style="display:flex;gap:12px;margin-bottom:24px;border-bottom:2px solid #e0e0e0;flex-wrap:wrap;">
+         <button onclick="showRegistryTab('booking')" id="tab-booking" style="padding:12px 20px;background:none;border:none;border-bottom:3px solid #4dd0e1;cursor:pointer;font-size:15px;font-weight:600;color:#00796b;transition:all 0.3s;">
+           📋 Booking
+         </button>
+         <button onclick="showRegistryTab('confirmed')" id="tab-confirmed" style="padding:12px 20px;background:none;border:none;border-bottom:3px solid transparent;cursor:pointer;font-size:15px;font-weight:500;color:#999;transition:all 0.3s;">
+           ✅ Booking Confirmed
+         </button>
+       </div>
+
+       <!-- Tab 1: Booking -->
+       <div id="tab-booking-content" style="display:block;">
+         <div style="background:linear-gradient(135deg,#e0f7fa 0%,#e1f5fe 100%);padding:20px;border-radius:12px;margin-bottom:24px;box-shadow:0 2px 8px rgba(0,121,107,0.1);">
+           <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+             <div>
+               <h3 style="color:#00796b;font-size:20px;margin:0 0 4px 0;font-weight:600;">📅 ปฏิทินการจองเตียง</h3>
+               <p style="color:#00897b;margin:0;font-size:14px;">แสดงผู้ป่วยตามวันที่ Admit</p>
+             </div>
+             <div style="display:flex;gap:12px;align-items:center;">
+               <button onclick="changeMonth(-1)" style="padding:8px 16px;background:white;border:2px solid #00796b;border-radius:8px;color:#00796b;cursor:pointer;font-weight:600;transition:all 0.2s;" onmouseover="this.style.background='#00796b';this.style.color='white'" onmouseout="this.style.background='white';this.style.color='#00796b'">◀ เดือนก่อน</button>
+               <div style="background:white;padding:10px 20px;border-radius:12px;box-shadow:0 2px 6px rgba(0,0,0,0.1);">
+                 <div id="current-month-year" style="color:#00796b;font-size:16px;font-weight:700;text-align:center;">-</div>
+               </div>
+               <button onclick="changeMonth(1)" style="padding:8px 16px;background:white;border:2px solid #00796b;border-radius:8px;color:#00796b;cursor:pointer;font-weight:600;transition:all 0.2s;" onmouseover="this.style.background='#00796b';this.style.color='white'" onmouseout="this.style.background='white';this.style.color='#00796b'">เดือนถัดไป ▶</button>
+             </div>
+           </div>
+         </div>
+         
+         <!-- Calendar View -->
+         <div id="booking-calendar" style="background:white;padding:16px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+           <!-- Calendar will be populated here -->
+         </div>
+       </div>
+
+       <!-- Tab 2: Booking Confirmed -->
+       <div id="tab-confirmed-content" style="display:none;">
+         <div style="background:linear-gradient(135deg,#c8e6c9 0%,#dcedc8 100%);padding:20px;border-radius:12px;margin-bottom:24px;box-shadow:0 2px 8px rgba(46,125,50,0.1);">
+           <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+             <div>
+               <h3 style="color:#2e7d32;font-size:20px;margin:0 0 4px 0;font-weight:600;">✅ รายการยืนยันแล้ว</h3>
+               <p style="color:#388e3c;margin:0;font-size:14px;">ผู้ป่วยที่ติดต่อยืนยันแล้ว พร้อมส่ง Admit</p>
+             </div>
+             <div style="background:white;padding:12px 24px;border-radius:12px;box-shadow:0 2px 6px rgba(0,0,0,0.1);">
+               <div style="text-align:center;">
+                 <div style="color:#2e7d32;font-size:32px;font-weight:700;line-height:1;" id="confirmed-count">0</div>
+                 <div style="color:#388e3c;font-size:13px;margin-top:4px;font-weight:500;">รายการ</div>
+               </div>
+             </div>
+           </div>
+         </div>
+         
+         <!-- Confirmed Cards Grid -->
+         <div id="confirmed-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;">
+           <!-- Confirmed cards will be populated here -->
+         </div>
+       </div>
+
+     </div>
+
+     <!-- Modal: Call Confirmation -->
+     <div id="call-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;">
+       <div style="background:white;padding:24px;border-radius:12px;max-width:500px;box-shadow:0 8px 24px rgba(0,0,0,0.2);">
+         <h3 style="color:#00796b;font-size:20px;margin:0 0 16px 0;font-weight:600;">ยืนยันการโทร</h3>
+         <div id="call-patient-info" style="background:#e0f7fa;padding:16px;border-radius:8px;margin-bottom:16px;border-left:4px solid #00897b;">
+           <p style="color:#004d40;font-weight:600;margin:0;font-size:15px;">HN: <span id="call-patient-hn">-</span></p>
+           <p style="color:#00695c;margin:6px 0 0 0;font-size:14px;">ชื่อ: <span id="call-patient-name">-</span></p>
+         </div>
+         <div style="display:grid;gap:12px;">
+           <div>
+             <label style="display:block;color:#00796b;font-weight:500;margin-bottom:8px;font-size:14px;">หมายเหตุ</label>
+             <textarea id="call-note" rows="4" style="width:100%;padding:12px;border:2px solid #b2ebf2;border-radius:8px;font-size:14px;resize:vertical;" placeholder="ระบุหมายเหตุเพิ่มเติม (ถ้ามี)"></textarea>
+           </div>
+           <div style="display:flex;gap:12px;margin-top:8px;">
+             <button onclick="saveCallConfirmation()" style="flex:1;padding:12px;background:linear-gradient(135deg,#66bb6a 0%,#43a047 100%);color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:15px;box-shadow:0 2px 8px rgba(102,187,106,0.3);">✓ ยืนยัน</button>
+             <button onclick="closeCallModal()" style="flex:1;padding:12px;background:#999;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:15px;">ปิด</button>
+           </div>
+         </div>
+       </div>
+     </div>
+
+     <!-- Modal: Select Ward for Admit -->
+     <div id="admit-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;">
+       <div style="background:white;padding:24px;border-radius:12px;max-width:500px;box-shadow:0 8px 24px rgba(0,0,0,0.2);">
+         <h3 style="color:#00796b;font-size:20px;margin:0 0 16px 0;font-weight:600;">🏥 ส่งผู้ป่วย Admit</h3>
+         <div id="admit-patient-info" style="background:#e8f5e9;padding:16px;border-radius:8px;margin-bottom:16px;border-left:4px solid #43a047;">
+           <p style="color:#1b5e20;font-weight:600;margin:0;font-size:15px;">HN: <span id="admit-patient-hn">-</span></p>
+           <p style="color:#2e7d32;margin:6px 0 0 0;font-size:14px;">ชื่อ: <span id="admit-patient-name">-</span></p>
+           <p style="color:#2e7d32;margin:6px 0 0 0;font-size:14px;">เตียง: <span id="admit-patient-bed">-</span></p>
+         </div>
+         <div style="display:grid;gap:12px;">
+           <div>
+             <label style="display:block;color:#00796b;font-weight:500;margin-bottom:8px;font-size:14px;">เลือกหอผู้ป่วย *</label>
+             <select id="admit-ward" style="width:100%;padding:12px;border:2px solid #c8e6c9;border-radius:8px;font-size:14px;background:white;">
+               <option value="">-- เลือกหอผู้ป่วย --</option>
+               <option value="floor1" disabled style="color:#999;">หอผู้ป่วยในชั้น 1 (Coming Soon)</option>
+               <option value="floor2">หอผู้ป่วยในชั้น 2</option>
+             </select>
+           </div>
+           <div style="display:flex;gap:12px;margin-top:8px;">
+             <button onclick="confirmAdmitPatient()" style="flex:1;padding:12px;background:linear-gradient(135deg,#66bb6a 0%,#43a047 100%);color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:15px;box-shadow:0 2px 8px rgba(102,187,106,0.3);">✓ ยืนยันส่ง Admit</button>
+             <button onclick="closeAdmitModal()" style="flex:1;padding:12px;background:#999;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:15px;">ปิด</button>
+           </div>
+         </div>
+       </div>
+     </div>
+
+     <!-- Modal: Booking Patient Details -->
+     <div id="booking-detail-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;overflow-y:auto;padding:20px;">
+       <div style="background:white;padding:24px;border-radius:12px;max-width:900px;width:100%;box-shadow:0 8px 24px rgba(0,0,0,0.2);margin:auto;">
+         <h3 style="color:#00796b;font-size:20px;margin:0 0 20px 0;font-weight:600;border-bottom:3px solid #4dd0e1;padding-bottom:12px;display:flex;align-items:center;gap:10px;">
+           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00796b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+             <polyline points="14 2 14 8 20 8"/>
+             <line x1="16" y1="13" x2="8" y2="13"/>
+             <line x1="16" y1="17" x2="8" y2="17"/>
+           </svg>
+           ข้อมูลผู้ป่วยทั้งหมด
+         </h3>
+         
+         <div id="booking-detail-content" style="background:#ffffff;padding:20px;border-radius:10px;border:2px solid #81d4fa;">
+           <!-- ข้อมูลส่วนตัว -->
+           <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px;padding-bottom:16px;border-bottom:2px solid #e0f7fa;">
+             <div>
+               <label style="color:#00897b;font-size:12px;font-weight:600;display:block;margin-bottom:4px;">HN</label>
+               <div id="detail-hn" style="color:#004d40;font-size:15px;font-weight:700;">-</div>
+             </div>
+             <div style="grid-column:span 2;">
+               <label style="color:#00897b;font-size:12px;font-weight:600;display:block;margin-bottom:4px;">ชื่อ-สกุล</label>
+               <div id="detail-name" style="color:#004d40;font-size:15px;font-weight:700;">-</div>
+             </div>
+             <div>
+               <label style="color:#00897b;font-size:12px;font-weight:600;display:block;margin-bottom:4px;">อายุ</label>
+               <div id="detail-age" style="color:#004d40;font-size:14px;">-</div>
+             </div>
+             <div>
+               <label style="color:#00897b;font-size:12px;font-weight:600;display:block;margin-bottom:4px;">เพศ</label>
+               <div id="detail-gender" style="color:#004d40;font-size:14px;">-</div>
+             </div>
+             <div>
+               <label style="color:#00897b;font-size:12px;font-weight:600;display:block;margin-bottom:4px;">เบอร์โทรศัพท์</label>
+               <div id="detail-phone" style="color:#004d40;font-size:14px;">-</div>
+             </div>
+           </div>
+
+           <!-- การวินิจฉัยและแพทย์ -->
+           <div style="margin-bottom:20px;padding-bottom:16px;border-bottom:2px solid #e0f7fa;">
+             <div style="margin-bottom:12px;">
+               <label style="color:#e65100;font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Diagnosis</label>
+               <div id="detail-diagnosis" style="color:#bf360c;font-size:14px;line-height:1.6;background:#fff3e0;padding:10px;border-radius:6px;">-</div>
+             </div>
+             <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
+               <div>
+                 <label style="color:#e65100;font-size:12px;font-weight:600;display:block;margin-bottom:4px;">วันที่เกิดโรค</label>
+                 <div id="detail-disease-date" style="color:#bf360c;font-size:14px;">-</div>
+               </div>
+               <div>
+                 <label style="color:#e65100;font-size:12px;font-weight:600;display:block;margin-bottom:4px;">สถานะ IMC</label>
+                 <div id="detail-imc" style="color:#bf360c;font-size:14px;font-weight:600;">-</div>
+               </div>
+               <div>
+                 <label style="color:#e65100;font-size:12px;font-weight:600;display:block;margin-bottom:4px;">แพทย์เจ้าของไข้</label>
+                 <div id="detail-doctor" style="color:#bf360c;font-size:14px;">-</div>
+               </div>
+             </div>
+           </div>
+
+           <!-- ข้อมูลการจอง -->
+           <div style="margin-bottom:20px;padding-bottom:16px;border-bottom:2px solid #e0f7fa;">
+             <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;">
+               <div>
+                 <label style="color:#2e7d32;font-size:12px;font-weight:600;display:block;margin-bottom:4px;">วันที่ Admit</label>
+                 <div id="detail-admit-date" style="color:#1b5e20;font-size:14px;font-weight:600;">-</div>
+               </div>
+               <div>
+                 <label style="color:#2e7d32;font-size:12px;font-weight:600;display:block;margin-bottom:4px;">ประเภทเตียง</label>
+                 <div id="detail-bed-type" style="color:#1b5e20;font-size:14px;">-</div>
+               </div>
+               <div>
+                 <label style="color:#2e7d32;font-size:12px;font-weight:600;display:block;margin-bottom:4px;">เตียงที่จอง</label>
+                 <div id="detail-bed" style="color:#1b5e20;font-size:14px;font-weight:600;">-</div>
+               </div>
+               <div>
+                 <label style="color:#2e7d32;font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Waiting Time</label>
+                 <div id="detail-waiting" style="color:#1b5e20;font-size:14px;">-</div>
+               </div>
+             </div>
+           </div>
+
+           <!-- ข้อมูลเพิ่มเติม -->
+           <div style="margin-bottom:20px;padding-bottom:16px;border-bottom:2px solid #e0f7fa;">
+             <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
+               <div>
+                 <label style="color:#6a1b9a;font-size:12px;font-weight:600;display:block;margin-bottom:4px;">แพ็กเกจ Lab</label>
+                 <div id="detail-lab" style="color:#4a148c;font-size:14px;">-</div>
+               </div>
+               <div>
+                 <label style="color:#6a1b9a;font-size:12px;font-weight:600;display:block;margin-bottom:4px;">ช่องทางนัดหมาย</label>
+                 <div id="detail-channel" style="color:#4a148c;font-size:14px;">-</div>
+               </div>
+               <div>
+                 <label style="color:#6a1b9a;font-size:12px;font-weight:600;display:block;margin-bottom:4px;">โรงพยาบาลส่งต่อ</label>
+                 <div id="detail-refer" style="color:#4a148c;font-size:14px;">-</div>
+               </div>
+             </div>
+           </div>
+
+           <!-- หมายเหตุ -->
+           <div id="detail-notes-section" style="display:none;">
+             <label style="color:#c62828;font-size:12px;font-weight:600;display:block;margin-bottom:4px;">หมายเหตุ</label>
+             <div id="detail-notes" style="color:#b71c1c;font-size:14px;line-height:1.6;background:#ffebee;padding:10px;border-radius:6px;white-space:pre-wrap;">-</div>
+           </div>
+         </div>
+
+         <div style="display:flex;gap:10px;margin-top:20px;border-top:2px solid #e0e0e0;padding-top:16px;">
+           <button onclick="openCallModalFromDetail()" style="flex:1;padding:12px;background:linear-gradient(135deg,#4dd0e1 0%,#26c6da 100%);color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:14px;box-shadow:0 2px 8px rgba(77,208,225,0.3);transition:all 0.2s;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 12px rgba(77,208,225,0.4)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 2px 8px rgba(77,208,225,0.3)'">📞 โทร</button>
+           <button onclick="closeBookingDetailModal()" style="flex:1;padding:12px;background:#999;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:14px;transition:all 0.2s;" onmouseover="this.style.background='#757575'" onmouseout="this.style.background='#999'">ปิด</button>
+         </div>
+       </div>
+     </div>
+
+     <!-- Modal: Confirmed Patient Details -->
+     <div id="confirmed-detail-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;overflow-y:auto;padding:20px;">
+       <div style="background:white;padding:24px;border-radius:12px;max-width:900px;width:100%;box-shadow:0 8px 24px rgba(0,0,0,0.2);margin:auto;">
+         <h3 style="color:#2e7d32;font-size:20px;margin:0 0 20px 0;font-weight:600;border-bottom:3px solid #66bb6a;padding-bottom:12px;display:flex;align-items:center;gap:10px;">
+           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2e7d32" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+             <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+             <polyline points="22 4 12 14.01 9 11.01"/>
+           </svg>
+           ข้อมูลผู้ป่วยที่ยืนยันแล้ว
+         </h3>
+         
+         <div id="confirmed-detail-content" style="background:#ffffff;padding:20px;border-radius:10px;border:2px solid #81d4fa;">
+           <!-- ข้อมูลส่วนตัว (Editable) -->
+           <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px;padding-bottom:16px;border-bottom:2px solid #e0f7fa;">
+             <div>
+               <label style="color:#00897b;font-size:12px;font-weight:600;display:block;margin-bottom:4px;">HN</label>
+               <input id="confirmed-detail-hn" type="text" style="color:#004d40;font-size:15px;font-weight:700;width:100%;padding:6px;border:1px solid #b2ebf2;border-radius:6px;" disabled />
+             </div>
+             <div style="grid-column:span 2;">
+               <label style="color:#00897b;font-size:12px;font-weight:600;display:block;margin-bottom:4px;">ชื่อ-สกุล</label>
+               <input id="confirmed-detail-name" type="text" style="color:#004d40;font-size:15px;font-weight:700;width:100%;padding:6px;border:1px solid #b2ebf2;border-radius:6px;" disabled />
+             </div>
+             <div>
+               <label style="color:#00897b;font-size:12px;font-weight:600;display:block;margin-bottom:4px;">อายุ</label>
+               <input id="confirmed-detail-age" type="number" min="0" style="color:#004d40;font-size:14px;width:100%;padding:6px;border:1px solid #b2ebf2;border-radius:6px;" disabled />
+             </div>
+             <div>
+               <label style="color:#00897b;font-size:12px;font-weight:600;display:block;margin-bottom:4px;">เพศ</label>
+               <select id="confirmed-detail-gender" style="color:#004d40;font-size:14px;width:100%;padding:6px;border:1px solid #b2ebf2;border-radius:6px;" disabled>
+                 <option value="ชาย">ชาย</option>
+                 <option value="หญิง">หญิง</option>
+                 <option value="อื่นๆ">อื่นๆ</option>
+               </select>
+             </div>
+             <div>
+               <label style="color:#00897b;font-size:12px;font-weight:600;display:block;margin-bottom:4px;">เบอร์โทรศัพท์</label>
+               <input id="confirmed-detail-phone" type="text" style="color:#004d40;font-size:14px;width:100%;padding:6px;border:1px solid #b2ebf2;border-radius:6px;" disabled />
+             </div>
+           </div>
+
+           <!-- การวินิจฉัยและแพทย์ -->
+           <div style="margin-bottom:20px;padding-bottom:16px;border-bottom:2px solid #e0f7fa;">
+             <div style="margin-bottom:12px;">
+               <label style="color:#e65100;font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Diagnosis</label>
+               <input id="confirmed-detail-diagnosis" type="text" style="color:#bf360c;font-size:14px;line-height:1.6;background:#fff3e0;padding:10px;border-radius:6px;width:100%;" disabled />
+             </div>
+             <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
+               <div>
+                 <label style="color:#e65100;font-size:12px;font-weight:600;display:block;margin-bottom:4px;">วันที่เกิดโรค</label>
+                 <input id="confirmed-detail-disease-date" type="date" style="color:#bf360c;font-size:14px;width:100%;padding:6px;border:1px solid #ffe0b2;border-radius:6px;" disabled />
+               </div>
+               <div>
+                 <label style="color:#e65100;font-size:12px;font-weight:600;display:block;margin-bottom:4px;">สถานะ IMC</label>
+                 <input id="confirmed-detail-imc" type="text" style="color:#bf360c;font-size:14px;font-weight:600;width:100%;padding:6px;border:1px solid #ffe0b2;border-radius:6px;background:#f3e5f5;" disabled />
+               </div>
+               <div>
+                 <label style="color:#e65100;font-size:12px;font-weight:600;display:block;margin-bottom:4px;">แพทย์เจ้าของไข้</label>
+                 <select id="confirmed-detail-doctor" style="color:#bf360c;font-size:14px;width:100%;padding:6px;border:1px solid #ffe0b2;border-radius:6px;" disabled>
+                   <option value="">-- เลือกแพทย์เจ้าของไข้ --</option>
+                   <option value="นพ.ธนภูมิ ลัดดาชยาพร">นพ.ธนภูมิ ลัดดาชยาพร</option>
+                   <option value="นพ.ณัชพล ผลกันทา">นพ.ณัชพล ผลกันทา</option>
+                   <option value="นพ.ทรัพย์ ตั้งพานิชยานนท์">นพ.ทรัพย์ ตั้งพานิชยานนท์</option>
+                   <option value="other">อื่นๆ (โปรดระบุ)</option>
+                 </select>
+                 <input type="text" id="confirmed-detail-doctor-other" placeholder="ระบุชื่อแพทย์" style="width:100%;padding:6px;margin-top:8px;border:1px solid #ffe0b2;border-radius:6px;display:none;" disabled />
+                 </select>
+               </div>
+             </div>
+           </div>
+
+           <!-- ข้อมูลการจอง -->
+           <div style="margin-bottom:20px;padding-bottom:16px;border-bottom:2px solid #e0f7fa;">
+             <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;">
+               <div>
+                 <label style="color:#2e7d32;font-size:12px;font-weight:600;display:block;margin-bottom:4px;">วันที่ Admit</label>
+                 <div id="confirmed-detail-admit-date" style="color:#1b5e20;font-size:14px;font-weight:600;background:#f5f5f5;padding:6px;border-radius:6px;border:1px solid #c8e6c9;">-</div>
+               </div>
+               <div>
+                 <label style="color:#2e7d32;font-size:12px;font-weight:600;display:block;margin-bottom:4px;">ประเภทเตียง</label>
+                 <div id="confirmed-detail-bed-type" style="color:#1b5e20;font-size:14px;background:#f5f5f5;padding:6px;border-radius:6px;border:1px solid #c8e6c9;">-</div>
+               </div>
+               <div>
+                 <label style="color:#2e7d32;font-size:12px;font-weight:600;display:block;margin-bottom:4px;">เตียงที่จอง</label>
+                 <input id="confirmed-detail-bed" type="text" style="color:#1b5e20;font-size:14px;font-weight:600;width:100%;padding:6px;border:1px solid #c8e6c9;border-radius:6px;" disabled />
+                 <input id="confirmed-detail-bed" type="text" style="color:#1b5e20;font-size:14px;font-weight:600;width:100%;padding:6px;border:1px solid #c8e6c9;border-radius:6px;" readonly disabled placeholder="จะจัดสรรอัตโนมัติ" />
+                 <p style="font-size:11px;color:#666;margin:4px 0 0 0;">เลือกประเภทเตียงแล้วจะปรากฏเตียงที่ว่าง</p>
+               </div>
+               <div>
+                 <label style="color:#2e7d32;font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Waiting Time</label>
+                 <input id="confirmed-detail-waiting" type="text" style="color:#1b5e20;font-size:14px;width:100%;padding:6px;border:1px solid #c8e6c9;border-radius:6px;" disabled />
+               </div>
+             </div>
+           </div>
+
+           <!-- ข้อมูลเพิ่มเติม -->
+           <div style="margin-bottom:20px;padding-bottom:16px;border-bottom:2px solid #e0f7fa;">
+             <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
+               <div>
+                 <label style="color:#6a1b9a;font-size:12px;font-weight:600;display:block;margin-bottom:4px;">แพ็กเกจ Lab</label>
+                 <select id="confirmed-detail-lab" style="color:#4a148c;font-size:14px;width:100%;padding:6px;border:1px solid #d1c4e9;border-radius:6px;" disabled onchange="if(this.value==='อื่นๆ'){document.getElementById('confirmed-detail-lab-other').style.display='';}else{document.getElementById('confirmed-detail-lab-other').style.display='none';document.getElementById('confirmed-detail-lab-other').value='';}">
+                   <option value="">-- เลือกชุด Lab --</option>
+                   <option value="small">📋 ชุดเล็ก (CBC, Bun, Cr, Electrolyte, UA, EKG, CXR)</option>
+                   <option value="large">📋 ชุดใหญ่ (CBC, Bun, Cr, Electrolyte, Ca, Mg, PO4, LFT, UA, EKG, CXR)</option>
+                   <option value="other">🔧 อื่นๆ (โปรดระบุ)</option>
+                 </select>
+                 <input type="text" id="confirmed-detail-lab-other" placeholder="ระบุแพ็กเกจ Lab" style="width:100%;padding:6px;margin-top:8px;border:1px solid #d1c4e9;border-radius:6px;display:none;" disabled />
+               </div>
+               <div>
+                 <label style="color:#6a1b9a;font-size:12px;font-weight:600;display:block;margin-bottom:4px;">ช่องทางนัดหมาย</label>
+                 <div id="confirmed-detail-channel" style="color:#4a148c;font-size:14px;background:#f5f5f5;padding:6px;border-radius:6px;border:1px solid #d1c4e9;">-</div>
+               </div>
+               <div>
+                 <label style="color:#6a1b9a;font-size:12px;font-weight:600;display:block;margin-bottom:4px;">โรงพยาบาลส่งต่อ</label>
+                 <div id="confirmed-detail-refer" style="color:#4a148c;font-size:14px;background:#f5f5f5;padding:6px;border-radius:6px;border:1px solid #d1c4e9;">-</div>
+               </div>
+             </div>
+             <div id="confirmed-detail-postpone-section" style="margin-top:16px;display:none;">
+               <label style="color:#fb8c00;font-size:12px;font-weight:600;display:block;margin-bottom:4px;">การเลื่อนวัน Admit</label>
+               <div id="confirmed-detail-postpone-info" style="color:#fb8c00;font-size:13px;line-height:1.6;background:#fff3e0;padding:10px;border-radius:6px;white-space:pre-wrap;"></div>
+             </div>
+           </div>
+
+           <!-- ข้อมูลการโทรยืนยัน -->
+           <div style="margin-bottom:20px;padding-bottom:16px;border-bottom:2px solid #e0f7fa;">
+             <label style="color:#2e7d32;font-size:12px;font-weight:600;display:block;margin-bottom:8px;">ข้อมูลการโทรยืนยัน</label>
+             <div id="confirmed-detail-call-note" style="color:#1b5e20;font-size:14px;line-height:1.6;background:#e8f5e9;padding:10px;border-radius:6px;white-space:pre-wrap;">-</div>
+           </div>
+
+           <!-- หมายเหตุ -->
+           <div id="confirmed-detail-notes-section" style="display:none;">
+             <label style="color:#c62828;font-size:12px;font-weight:600;display:block;margin-bottom:4px;">หมายเหตุ</label>
+             <div id="confirmed-detail-notes" style="color:#b71c1c;font-size:14px;line-height:1.6;background:#ffebee;padding:10px;border-radius:6px;white-space:pre-wrap;">-</div>
+           </div>
+         </div>
+
+         <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:20px;border-top:2px solid #e0e0e0;padding-top:16px;">
+           <button id="edit-confirmed-detail-btn" onclick="enableConfirmedDetailEdit()" style="padding:12px;background:linear-gradient(135deg,#4dd0e1 0%,#26c6da 100%);color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:14px;box-shadow:0 2px 8px rgba(77,208,225,0.3);transition:all 0.2s;">✏️ แก้ไขข้อมูล</button>
+           <button id="save-confirmed-detail-btn" onclick="saveConfirmedDetailEdit()" style="padding:12px;background:linear-gradient(135deg,#66bb6a 0%,#43a047 100%);color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:14px;box-shadow:0 2px 8px rgba(102,187,106,0.3);transition:all 0.2s;display:none;">💾 บันทึก</button>
+           <script>
+             // ป้องกันการ enable ฟิลด์วันที่ Admit และประเภทเตียง
+             function enableConfirmedDetailEdit() {
+               // ...existing code for enabling other fields...
+               document.getElementById('confirmed-detail-admit-date').disabled = true;
+               document.getElementById('confirmed-detail-admit-date').readOnly = true;
+               document.getElementById('confirmed-detail-bed-type').disabled = true;
+               document.getElementById('confirmed-detail-bed-type').readOnly = true;
+               document.getElementById('confirmed-detail-bed-type').tabIndex = -1;
+             }
+           </script>
+           <button onclick="admitPatientFromDetail()" style="padding:12px;background:linear-gradient(135deg,#66bb6a 0%,#43a047 100%);color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:14px;box-shadow:0 2px 8px rgba(102,187,106,0.3);transition:all 0.2s;">🏥 ส่ง Admit</button>
+           <button onclick="openPostponeModal()" style="padding:12px;background:linear-gradient(135deg,#ffa726 0%,#fb8c00 100%);color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:14px;box-shadow:0 2px 8px rgba(255,167,38,0.3);transition:all 0.2s;">📅 เลื่อนวัน</button>
+           <button onclick="cancelConfirmedFromDetail()" style="padding:12px;background:linear-gradient(135deg,#ef5350 0%,#e53935 100%);color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:14px;box-shadow:0 2px 8px rgba(239,83,80,0.3);transition:all 0.2s;">❌ ยกเลิก</button>
+           <button onclick="closeConfirmedDetailModal()" style="padding:12px;background:#999;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:14px;transition:all 0.2s;">ปิด</button>
+         </div>
+       </div>
+     </div>
+
+     <!-- Modal: Postpone Booking -->
+     <div id="postpone-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1002;align-items:center;justify-content:center;">
+       <div style="background:white;padding:24px;border-radius:12px;max-width:500px;width:90%;box-shadow:0 8px 24px rgba(0,0,0,0.2);">
+         <h3 style="color:#fb8c00;font-size:20px;margin:0 0 16px 0;font-weight:600;">📅 เลื่อนวันจองเตียง</h3>
+         
+         <div style="background:#fff3e0;padding:12px;border-radius:8px;margin-bottom:16px;border-left:4px solid #ffa726;">
+           <p style="margin:0;font-size:13px;color:#e65100;font-weight:600;">ผู้ป่วย: <span id="postpone-patient-name"></span></p>
+           <p style="margin:4px 0 0 0;font-size:12px;color:#ef6c00;">HN: <span id="postpone-patient-hn"></span></p>
+         </div>
+
+         <div style="margin-bottom:16px;">
+           <label style="display:block;color:#fb8c00;font-weight:600;margin-bottom:8px;font-size:14px;">วันที่จอง Admit ใหม่ *</label>
+           <input type="date" id="postpone-new-date" style="width:100%;padding:12px;border:2px solid #ffe0b2;border-radius:8px;font-size:14px;">
+         </div>
+
+         <div style="margin-bottom:20px;">
+           <label style="display:block;color:#fb8c00;font-weight:600;margin-bottom:8px;font-size:14px;">เหตุผลการเลื่อน *</label>
+           <textarea id="postpone-reason" rows="4" style="width:100%;padding:12px;border:2px solid #ffe0b2;border-radius:8px;font-size:14px;resize:vertical;" placeholder="กรุณาระบุเหตุผลการเลื่อนวัน (จำเป็น)"></textarea>
+         </div>
+
+         <div style="display:flex;gap:10px;">
+           <button onclick="confirmPostponeBooking()" style="flex:1;padding:12px;background:linear-gradient(135deg,#ffa726 0%,#fb8c00 100%);color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:15px;box-shadow:0 2px 8px rgba(255,167,38,0.3);">✓ ยืนยันเลื่อนวัน</button>
+           <button onclick="closePostponeModal()" style="flex:1;padding:12px;background:#999;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:15px;">ยกเลิก</button>
+         </div>
+       </div>
+     </div>
+
+     <!-- Modal: Cancel Confirmation -->
+     <div id="cancel-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1001;align-items:center;justify-content:center;">
+       <div style="background:white;padding:24px;border-radius:12px;max-width:500px;width:90%;box-shadow:0 8px 24px rgba(0,0,0,0.2);">
+         <h3 style="color:#d32f2f;font-size:20px;margin:0 0 16px 0;font-weight:600;">❌ ยกเลิกการจอง</h3>
+         <div id="cancel-patient-info" style="background:#ffebee;padding:16px;border-radius:8px;margin-bottom:16px;border-left:4px solid #d32f2f;">
+           <p style="color:#c62828;font-weight:600;margin:0;font-size:15px;">HN: <span id="cancel-patient-hn">-</span></p>
+           <p style="color:#d32f2f;margin:6px 0 0 0;font-size:14px;">ชื่อ: <span id="cancel-patient-name">-</span></p>
+         </div>
+         <div style="display:grid;gap:12px;">
+           <div>
+             <label style="display:block;color:#d32f2f;font-weight:600;margin-bottom:8px;font-size:14px;">เหตุผลการยกเลิก *</label>
+             <textarea id="cancel-reason" rows="4" style="width:100%;padding:12px;border:2px solid #ffcdd2;border-radius:8px;font-size:14px;resize:vertical;" placeholder="กรุณาระบุเหตุผลการยกเลิก (จำเป็น)"></textarea>
+           </div>
+           <div style="display:flex;gap:12px;margin-top:8px;">
+             <button onclick="confirmCancelBooking()" style="flex:1;padding:12px;background:linear-gradient(135deg,#ef5350 0%,#e53935 100%);color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:15px;box-shadow:0 2px 8px rgba(239,83,80,0.3);">✓ ยืนยันยกเลิก</button>
+             <button onclick="closeCancelModal()" style="flex:1;padding:12px;background:#999;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:15px;">ปิด</button>
+           </div>
+         </div>
+       </div>
+     </div>
+   </main>
+   <footer style="background: linear-gradient(135deg,#80deea 0%,#81c784 100%); padding:20px;text-align:center;width:100%;"><p style="color:white;font-size:14px;margin:0;">© 2024 งานการพยาบาลผู้ป่วยนอก โรงพยาบาลเวชชารักษ์ ลำปาง | Smart Bed Admission Planner</p></footer>
+  </div>
+  <script src="app.js"></script>
+  <script src="google-sheet-config.js"></script>
+  <script src="registry-functions.js"></script>
+  <script>
+    // Always show booking list/calendar on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      displayBookingList();
+    });
+  </script>
+ </body>
+</html>

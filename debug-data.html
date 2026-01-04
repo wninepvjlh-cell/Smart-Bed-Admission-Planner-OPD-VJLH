@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Data</title>
+    <style>
+        body { font-family: monospace; padding: 20px; }
+        pre { background: #f5f5f5; padding: 15px; border-radius: 5px; }
+        .section { margin: 20px 0; border: 2px solid #ddd; padding: 15px; }
+    </style>
+</head>
+<body>
+    <script>
+        (function runOneTimePatientDataPurge() {
+            if (typeof window === 'undefined') {
+                return;
+            }
+            if (window.__sbpDataPurge) {
+                window.__sbpDataPurge();
+                return;
+            }
+            const FLAG_KEY = 'sbp_data_purged_20260103';
+            const KEYS_TO_CLEAR = [
+                'bookingData',
+                'ipdData',
+                'ipd_female_standard_floor2',
+                'ipd_female_special_floor2',
+                'ipd_male_standard_floor2',
+                'ipd_male_special_floor2',
+                'ipd_active_beds_floor2'
+            ];
+            window.__sbpDataPurge = function __sbpDataPurge() {
+                if (typeof window === 'undefined' || !window.localStorage) {
+                    return;
+                }
+                if (localStorage.getItem(FLAG_KEY)) {
+                    return;
+                }
+                KEYS_TO_CLEAR.forEach(function(key) {
+                    try {
+                        localStorage.removeItem(key);
+                    } catch (error) {
+                        console.warn('Unable to remove key from localStorage:', key, error);
+                    }
+                });
+                try {
+                    localStorage.setItem(FLAG_KEY, new Date().toISOString());
+                } catch (error) {
+                    console.warn('Unable to set purge flag in localStorage:', error);
+                }
+            };
+            window.__sbpDataPurge();
+        })();
+    </script>
+    <h1>Debug: ข้อมูลผู้ป่วยในระบบ</h1>
+    <div class="section">
+        <h2>Booking Data (ทั้งหมด)</h2>
+        <pre id="bookingData"></pre>
+    </div>
+    <div class="section">
+        <h2>ผู้ป่วยห้องพิเศษ (VIP) ที่ Admit แล้ว</h2>
+        <pre id="vipPatients"></pre>
+    </div>
+    <div class="section">
+        <h2>ผู้ป่วยห้องพิเศษ (VIP) ที่จองแล้ว (Booked)</h2>
+        <pre id="vipBooked"></pre>
+    </div>
+    <div class="section">
+        <h2>ผู้ป่วยที่มีวันจำหน่าย 28 ธ.ค. 2568</h2>
+        <pre id="discharge28"></pre>
+    </div>
+    <div class="section">
+        <h2>ผู้ป่วยทั้งหมดในระบบ (Admitted + Booked + Confirmed)</h2>
+        <pre id="allPatients"></pre>
+    </div>
+    
+    <script>
+        const bookingData = JSON.parse(localStorage.getItem('bookingData')) || {};
+        document.getElementById('bookingData').textContent = JSON.stringify(bookingData, null, 2);
+        
+        // Filter VIP admitted patients
+        const vipPatients = (bookingData.admitted || []).filter(p => 
+            ['V1','V2','V3','V4','V5','V6'].includes(p.assigned_bed)
+        );
+        document.getElementById('vipPatients').textContent = vipPatients.length > 0 
+            ? JSON.stringify(vipPatients, null, 2) 
+            : 'ไม่มีผู้ป่วย VIP ที่ Admit แล้ว';
+        
+        // Filter VIP booked patients
+        const vipBooked = [...(bookingData.booked || []), ...(bookingData.confirmed || [])].filter(p => 
+            p.bed_type === 'special' || p.bed_type === 'vip' || p.bed_type === 'พิเศษ'
+        );
+        document.getElementById('vipBooked').textContent = vipBooked.length > 0 
+            ? JSON.stringify(vipBooked, null, 2) 
+            : 'ไม่มีการจองห้องพิเศษ';
+        
+        // Filter patients with discharge date 2025-12-28
+        const discharge28 = (bookingData.admitted || []).filter(p => 
+            p.expected_discharge_date === '2025-12-28'
+        );
+        document.getElementById('discharge28').textContent = discharge28.length > 0 
+            ? JSON.stringify(discharge28, null, 2) 
+            : 'ไม่มีผู้ป่วยที่จำหน่ายวันที่ 28';
+        
+        // All patients
+        const allPatients = [
+            ...(bookingData.admitted || []),
+            ...(bookingData.booked || []),
+            ...(bookingData.confirmed || [])
+        ];
+        document.getElementById('allPatients').textContent = `จำนวนทั้งหมด: ${allPatients.length} คน\n\n` + JSON.stringify(allPatients, null, 2);
+    </script>
+</body>
+</html>
