@@ -772,23 +772,7 @@ function confirmAdmit() {
 
   localStorage.setItem('bookingData', JSON.stringify(bookingData));
 
-  // Backup to Google Sheets
-  fetch(ADMITTED_SHEET_WEB_APP_URL, {
-    method: 'POST',
-    mode: 'no-cors',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      action: 'ipd_admit',
-      patient_hn: patient.patient_hn,
-      patient_name: patient.patient_name,
-      assigned_bed: selectedBed,
-      admitted_date: patient.admitted_date,
-      expected_discharge_date: dischargeDate,
-      doctor_name: patient.doctor_name || patient.attending_doctor,
-      diagnosis: patient.diagnosis,
-      timestamp: new Date().toISOString()
-    })
-  }).catch(error => console.log('Google Sheets backup:', error));
+  // Google Sheets sync disabled
 
   // Remove modal
   const modal = document.getElementById('bed-selection-modal');
@@ -1031,23 +1015,7 @@ function savePatientChanges() {
     // Save to localStorage
     localStorage.setItem('bookingData', JSON.stringify(bookingData));
     
-    // Backup to Google Sheets
-    fetch(ADMITTED_SHEET_WEB_APP_URL, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'ipd_update',
-        patient_hn: selectedPatient.patient_hn,
-        patient_name: selectedPatient.patient_name,
-        diagnosis: selectedPatient.diagnosis || '',
-        admitted_date: selectedPatient.admitted_date || '',
-        old_bed: oldBed,
-        new_bed: newBed,
-        doctor_name: newDoctor,
-        expected_discharge_date: newDischargeDate,
-        notes: newNotes,
-        timestamp: new Date().toISOString()
+    // Google Sheets sync disabled
       })
     }).catch(error => console.log('Google Sheets backup:', error));
     
@@ -1188,23 +1156,7 @@ function confirmRefer() {
   // Save to localStorage
   localStorage.setItem('bookingData', JSON.stringify(bookingData));
   
-  // Backup to Google Sheets
-  fetch(ADMITTED_SHEET_WEB_APP_URL, {
-    method: 'POST',
-    mode: 'no-cors',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      action: 'ipd_refer',
-      patient_hn: selectedPatient.patient_hn,
-      patient_name: selectedPatient.patient_name,
-      assigned_bed: selectedPatient.assigned_bed,
-      doctor_name: selectedPatient.doctor_name,
-      diagnosis: selectedPatient.diagnosis,
-      admitted_date: selectedPatient.admitted_date,
-      expected_discharge_date: selectedPatient.expected_discharge_date,
-      refer_hospital: hospitalName,
-      refer_reason: diagnosis,
-      timestamp: new Date().toISOString()
+  // Google Sheets sync disabled
     })
   }).catch(error => console.log('Google Sheets backup:', error));
   

@@ -43,7 +43,7 @@
 })();
 
 // Google Apps Script endpoints for remote booking sync
-const CANCELLED_SHEET_WEB_APP_URL = (window.SBPSheetEndpoints && window.SBPSheetEndpoints.cancelled) || 'https://script.google.com/macros/s/AKfycbzUNE6qd20_gSMMBu7vuoJH-23mmP3FX7SERAK1vze7mhzgh7ry3H2gsJMfZHWWbvl1ZQ/exec';
+// const CANCELLED_SHEET_WEB_APP_URL = ... (disabled)
 
 // Registry Functions
 
@@ -985,23 +985,7 @@ function confirmCancelBooking() {
   
   localStorage.setItem('bookingData', JSON.stringify(bookingData));
 
-  // Sync cancellation to Google Sheets for shared visibility
-  fetch(CANCELLED_SHEET_WEB_APP_URL, {
-    method: 'POST',
-    mode: 'no-cors',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      action: 'booking_cancelled',
-      patient_hn: patient.patient_hn,
-      patient_name: patient.patient_name,
-      admit_date: patient.admit_date || null,
-      assigned_bed: patient.assigned_bed || null,
-      cancel_reason: reason,
-      cancel_date: cancelTimestamp,
-      cancelled_by: loggedUser,
-      timestamp: cancelTimestamp
-    })
-  }).catch(error => console.log('Google Sheets cancellation sync:', error));
+  // Google Sheets sync disabled
   
   alert(`✅ ยกเลิกการจองสำเร็จ\n\nชื่อ: ${patient.patient_name}\nHN: ${patient.patient_hn}\n\nเหตุผล: ${reason}`);
   

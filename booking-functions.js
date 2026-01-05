@@ -43,10 +43,11 @@
 })();
 
 // Google Apps Script endpoint for syncing booked bookings to Google Sheets
-const BOOKED_SHEET_WEB_APP_URL = (window.SBPSheetEndpoints && window.SBPSheetEndpoints.booked) || 'https://script.google.com/macros/s/AKfycbw2CG9_2tZaM_Ommt3Z2HPmPoFH_2_FNtr1oLlXMaA9CyAs3qiTBtODQ2YB74NQ_ujo5w/exec';
+// Google Apps Script endpoint for syncing booked bookings to Google Sheets
+// const BOOKED_SHEET_WEB_APP_URL = ... (disabled)
 
 // Google Apps Script endpoint for confirmed bookings
-const CONFIRMED_SHEET_WEB_APP_URL = (window.SBPSheetEndpoints && window.SBPSheetEndpoints.confirmed) || 'https://script.google.com/macros/s/AKfycbx06ftWZO2wiPzDTFhMv7Vmnxh_PPqCcClx5d8gRoav9dvkikdX6ay1szCsD3bexx32eg/exec';
+// const CONFIRMED_SHEET_WEB_APP_URL = ... (disabled)
 
 // Reschedule a confirmed booking: move from confirmed to booked if bed is available
 function rescheduleConfirmedBooking(bookingId, newFormData) {
@@ -600,20 +601,7 @@ function handleBookingSubmit() {
   localStorage.setItem('bookingData', JSON.stringify(bookingData));
   window.dispatchEvent(new Event('storage'));
 
-  // Backup to Google Sheets
-  fetch(BOOKED_SHEET_WEB_APP_URL, {
-    method: 'POST',
-    mode: 'no-cors',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      ...formData,
-      status: 'booked',
-      booking_date: new Date().toISOString(),
-      backup_type: 'booking'
-    })
-  }).catch(error => console.log('Google Sheets backup:', error));
+  // Google Sheets sync disabled
 
   // Mock: Update Status view (in real app, would call backend and redirect)
   alert(`✓ บันทึกการจองเตียงสำเร็จ\n\nHN: ${formData.patient_hn}\nชื่อ: ${formData.patient_name}\nวันที่ Admit: ${formData.admit_date}\nเตียง: ${formData.assigned_bed}\n\n✓ ข้อมูลถูกสำรองลง Google Sheets แล้ว`);
@@ -653,21 +641,7 @@ function handleAdmitSubmit() {
   localStorage.setItem('bookingData', JSON.stringify(bookingData));
   window.dispatchEvent(new Event('storage'));
 
-  // Backup to Google Sheets
-  fetch(CONFIRMED_SHEET_WEB_APP_URL, {
-    method: 'POST',
-    mode: 'no-cors',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      ...formData,
-      status: 'confirmed',
-      booking_date: new Date().toISOString(),
-      confirm_date: new Date().toISOString(),
-      backup_type: 'confirmed'
-    })
-  }).catch(error => console.log('Google Sheets backup:', error));
+  // Google Sheets sync disabled
 
   const admitDateThai = new Date(formData.admit_date).toLocaleDateString('th-TH', {
     year: 'numeric',
