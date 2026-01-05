@@ -42,6 +42,12 @@
   window.__sbpDataPurge();
 })();
 
+// Google Apps Script endpoint for syncing booked bookings to Google Sheets
+const BOOKED_SHEET_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbw2CG9_2tZaM_Ommt3Z2HPmPoFH_2_FNtr1oLlXMaA9CyAs3qiTBtODQ2YB74NQ_ujo5w/exec';
+
+// Google Apps Script endpoint for confirmed bookings
+const CONFIRMED_SHEET_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbx06ftWZO2wiPzDTFhMv7Vmnxh_PPqCcClx5d8gRoav9dvkikdX6ay1szCsD3bexx32eg/exec';
+
 // Reschedule a confirmed booking: move from confirmed to booked if bed is available
 function rescheduleConfirmedBooking(bookingId, newFormData) {
   const bookingData = JSON.parse(localStorage.getItem('bookingData')) || { booked: [], confirmed: [], admitted: [] };
@@ -578,7 +584,7 @@ function handleBookingSubmit() {
   window.dispatchEvent(new Event('storage'));
 
   // Backup to Google Sheets
-  fetch('https://script.google.com/macros/s/AKfycbwMm7j79jpxLG-zdwoaygn8C3Oz5YuPy9f1UVgrhuAUy-EJ3Wt1h1s8j44MjxY21PDT/exec', {
+  fetch(BOOKED_SHEET_WEB_APP_URL, {
     method: 'POST',
     mode: 'no-cors',
     headers: {
@@ -628,7 +634,7 @@ function handleAdmitSubmit() {
   window.dispatchEvent(new Event('storage'));
 
   // Backup to Google Sheets
-  fetch('https://script.google.com/macros/s/AKfycbwMm7j79jpxLG-zdwoaygn8C3Oz5YuPy9f1UVgrhuAUy-EJ3Wt1h1s8j44MjxY21PDT/exec', {
+  fetch(CONFIRMED_SHEET_WEB_APP_URL, {
     method: 'POST',
     mode: 'no-cors',
     headers: {
@@ -639,7 +645,7 @@ function handleAdmitSubmit() {
       status: 'confirmed',
       booking_date: new Date().toISOString(),
       confirm_date: new Date().toISOString(),
-      backup_type: 'admit'
+      backup_type: 'confirmed'
     })
   }).catch(error => console.log('Google Sheets backup:', error));
 
@@ -688,6 +694,72 @@ function updateWaitingListDisplay() {
   window.dispatchEvent(new Event('storage'));
 }
 
+function exportBookingDataAsJSON() {
+  try {
+    const stored = localStorage.getItem('bookingData');
+    const data = stored ? JSON.parse(stored) : { booked: [], confirmed: [], admitted: [], cancelled: [] };
+    const safeData = {
+      booked: Array.isArray(data.booked) ? data.booked : [],
+      confirmed: Array.isArray(data.confirmed) ? data.confirmed : [],
+      admitted: Array.isArray(data.admitted) ? data.admitted : [],
+      cancelled: Array.isArray(data.cancelled) ? data.cancelled : []
+    };
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const blob = new Blob([JSON.stringify(safeData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = `booking-data-${timestamp}.json`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
+    URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error('Export booking data error:', error);
+    alert('ไม่สามารถส่งออกข้อมูลได้ กรุณาลองใหม่อีกครั้ง');
+  }
+}
+
+function triggerBookingJSONImport() {
+  const fileInput = document.getElementById('booking-json-input');
+  if (fileInput) {
+    fileInput.click();
+  }
+}
+
+function handleBookingJSONImport(event) {
+  const { target } = event || {};
+  const file = target && target.files ? target.files[0] : undefined;
+  if (!file) {
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = function onFileLoad(loadEvent) {
+    try {
+      const result = loadEvent && loadEvent.target ? loadEvent.target.result : '{}';
+      const data = JSON.parse(result);
+      const merged = {
+        booked: Array.isArray(data.booked) ? data.booked : [],
+        confirmed: Array.isArray(data.confirmed) ? data.confirmed : [],
+        admitted: Array.isArray(data.admitted) ? data.admitted : [],
+        cancelled: Array.isArray(data.cancelled) ? data.cancelled : []
+      };
+      localStorage.setItem('bookingData', JSON.stringify(merged));
+      window.dispatchEvent(new Event('storage'));
+      alert('นำเข้าข้อมูลสำเร็จแล้ว ข้อมูลจองเตียงถูกอัปเดตเรียบร้อย');
+    } catch (error) {
+      console.error('Import booking data error:', error);
+      alert('ไฟล์ไม่ถูกต้องหรืออ่านไม่ได้ กรุณาตรวจสอบแล้วลองใหม่');
+    } finally {
+      if (target) {
+        target.value = '';
+      }
+    }
+  };
+  reader.readAsText(file, 'utf-8');
+}
+
 // Export functions to global scope for HTML inline event handlers
 window.loadPatientData = loadPatientData;
 window.handleDiagnosisChange = handleDiagnosisChange;
@@ -697,3 +769,6 @@ window.getAvailableBeds = getAvailableBeds;
 window.handleLabChange = handleLabChange;
 window.handleChannelChange = handleChannelChange;
 window.handleBookingSubmit = handleBookingSubmit;
+window.exportBookingDataAsJSON = exportBookingDataAsJSON;
+window.triggerBookingJSONImport = triggerBookingJSONImport;
+window.handleBookingJSONImport = handleBookingJSONImport;

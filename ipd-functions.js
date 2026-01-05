@@ -42,6 +42,9 @@
   window.__sbpDataPurge();
 })();
 
+// Google Apps Script endpoint for syncing admitted IPD data
+const ADMITTED_SHEET_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyAoKbR8wKXK2EjAI2pWBaSMgHJncB--7BKDmCRaVr_AbiKCkQ7BvhsehwH50gadJ0l/exec';
+
 function normalizeAdmitValue(value) {
   return (value || '').toString().trim().toLowerCase();
 }
@@ -770,7 +773,7 @@ function confirmAdmit() {
   localStorage.setItem('bookingData', JSON.stringify(bookingData));
 
   // Backup to Google Sheets
-  fetch('https://script.google.com/macros/s/AKfycbwMm7j79jpxLG-zdwoaygn8C3Oz5YuPy9f1UVgrhuAUy-EJ3Wt1h1s8j44MjxY21PDT/exec', {
+  fetch(ADMITTED_SHEET_WEB_APP_URL, {
     method: 'POST',
     mode: 'no-cors',
     headers: { 'Content-Type': 'application/json' },
@@ -1029,7 +1032,7 @@ function savePatientChanges() {
     localStorage.setItem('bookingData', JSON.stringify(bookingData));
     
     // Backup to Google Sheets
-    fetch('https://script.google.com/macros/s/AKfycbwMm7j79jpxLG-zdwoaygn8C3Oz5YuPy9f1UVgrhuAUy-EJ3Wt1h1s8j44MjxY21PDT/exec', {
+    fetch(ADMITTED_SHEET_WEB_APP_URL, {
       method: 'POST',
       mode: 'no-cors',
       headers: { 'Content-Type': 'application/json' },
@@ -1186,7 +1189,7 @@ function confirmRefer() {
   localStorage.setItem('bookingData', JSON.stringify(bookingData));
   
   // Backup to Google Sheets
-  fetch('https://script.google.com/macros/s/AKfycbwMm7j79jpxLG-zdwoaygn8C3Oz5YuPy9f1UVgrhuAUy-EJ3Wt1h1s8j44MjxY21PDT/exec', {
+  fetch(ADMITTED_SHEET_WEB_APP_URL, {
     method: 'POST',
     mode: 'no-cors',
     headers: { 'Content-Type': 'application/json' },
@@ -1255,7 +1258,7 @@ function dischargePatient() {
   localStorage.setItem('bookingData', JSON.stringify(bookingData));
   
   // Backup to Google Sheets
-  fetch('https://script.google.com/macros/s/AKfycbwMm7j79jpxLG-zdwoaygn8C3Oz5YuPy9f1UVgrhuAUy-EJ3Wt1h1s8j44MjxY21PDT/exec', {
+  fetch(ADMITTED_SHEET_WEB_APP_URL, {
     method: 'POST',
     mode: 'no-cors',
     headers: { 'Content-Type': 'application/json' },

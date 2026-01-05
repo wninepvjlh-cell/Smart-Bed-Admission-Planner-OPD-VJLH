@@ -251,10 +251,51 @@ function savePostponeAdmitData(e) {
 }
 
 function doGet(e) {
-  return ContentService.createTextOutput(JSON.stringify({
-    status: 'ok',
-    message: 'IPD Floor 2 & Postpone Admit API is running'
-  })).setMimeType(ContentService.MimeType.JSON);
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName('admitted') || ss.getActiveSheet();
+
+    if (!sheet) {
+      return ContentService.createTextOutput(JSON.stringify({
+        status: 'error',
+        message: 'ไม่พบชีต admitted'
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    const values = sheet.getDataRange().getValues();
+
+    if (values.length <= 1) {
+      return ContentService.createTextOutput(JSON.stringify({
+        status: 'success',
+        count: 0,
+        data: []
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    const headers = values[0];
+    const records = values.slice(1)
+      .filter(row => row.some(cell => cell !== ''))
+      .map(row => {
+        const item = {};
+        headers.forEach((header, i) => {
+          const key = header && header.toString().trim() ? header.toString().trim() : `column_${i + 1}`;
+          item[key] = row[i];
+        });
+        return item;
+      });
+
+    return ContentService.createTextOutput(JSON.stringify({
+      status: 'success',
+      count: records.length,
+      data: records
+    })).setMimeType(ContentService.MimeType.JSON);
+
+  } catch (error) {
+    return ContentService.createTextOutput(JSON.stringify({
+      status: 'error',
+      message: error.toString()
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
 }
 
 // ฟังก์ชันแปลงวันที่เป็นรูปแบบไทย

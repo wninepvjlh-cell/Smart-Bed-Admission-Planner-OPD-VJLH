@@ -42,6 +42,9 @@
   window.__sbpDataPurge();
 })();
 
+// Google Apps Script endpoints for remote booking sync
+const CANCELLED_SHEET_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzUNE6qd20_gSMMBu7vuoJH-23mmP3FX7SERAK1vze7mhzgh7ry3H2gsJMfZHWWbvl1ZQ/exec';
+
 // Registry Functions
 
 let currentCallPatient = null;
@@ -207,6 +210,7 @@ function changeMonth(offset) {
 function renderCalendar() {
   const bookingData = loadBookingData();
   const bookedList = bookingData.booked || [];
+  const emptyState = document.getElementById('booking-empty-state');
   
   // Update month/year display
   document.getElementById('current-month-year').textContent = 
@@ -291,6 +295,10 @@ function renderCalendar() {
   calendarHTML += '</div>';
   
   document.getElementById('booking-calendar').innerHTML = calendarHTML;
+
+  if (emptyState) {
+    emptyState.style.display = bookedList.length === 0 ? 'flex' : 'none';
+  }
 }
 
 // Show bookings for specific day
@@ -470,7 +478,7 @@ function displayConfirmedList() {
   confirmedCount.textContent = confirmedList.length;
   
   if (confirmedList.length === 0) {
-    container.innerHTML = '<div style="grid-column:1/-1;padding:60px;text-align:center;color:#999;background:white;border-radius:12px;"><div style="font-size:48px;margin-bottom:16px;opacity:0.5;">✅</div><div style="font-size:16px;">ยังไม่มีรายการยืนยัน</div></div>';
+    container.innerHTML = '<div style="grid-column:1/-1;padding:60px;text-align:center;color:#999;background:white;border-radius:12px;"><div style="font-size:48px;margin-bottom:16px;opacity:0.5;">✅</div><div style="font-size:16px;">ยังไม่มีรายการยืนยันในเครื่องนี้</div><div style="margin-top:8px;font-size:13px;color:#666;">ใช้ปุ่ม "นำเข้าข้อมูล" ด้านบนเพื่อโหลดไฟล์สำรอง</div></div>';
     return;
   }
   
@@ -947,10 +955,11 @@ function confirmCancelBooking() {
   const patient = bookingData.confirmed[confirmedIndex];
   
   // Create cancelled record (optional - for record keeping)
+  const cancelTimestamp = new Date().toISOString();
   const cancelledPatient = {
     ...patient,
     cancel_reason: reason,
-    cancel_date: new Date().toISOString(),
+    cancel_date: cancelTimestamp,
     status: 'cancelled',
     cancelled_by: loggedUser,
     action_note: `ยกเลิกโดย ${loggedUser} เหตุผล: ${reason}`
@@ -966,6 +975,24 @@ function confirmCancelBooking() {
   bookingData.confirmed.splice(confirmedIndex, 1);
   
   localStorage.setItem('bookingData', JSON.stringify(bookingData));
+
+  // Sync cancellation to Google Sheets for shared visibility
+  fetch(CANCELLED_SHEET_WEB_APP_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      action: 'booking_cancelled',
+      patient_hn: patient.patient_hn,
+      patient_name: patient.patient_name,
+      admit_date: patient.admit_date || null,
+      assigned_bed: patient.assigned_bed || null,
+      cancel_reason: reason,
+      cancel_date: cancelTimestamp,
+      cancelled_by: loggedUser,
+      timestamp: cancelTimestamp
+    })
+  }).catch(error => console.log('Google Sheets cancellation sync:', error));
   
   alert(`✅ ยกเลิกการจองสำเร็จ\n\nชื่อ: ${patient.patient_name}\nHN: ${patient.patient_hn}\n\nเหตุผล: ${reason}`);
   

@@ -40,6 +40,29 @@
      <div style="background:white;padding:24px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.08);">
        <h2 style="color:#00796b;font-size:22px;margin:0 0 12px 0;">ทะเบียนจองเตียง</h2>
        
+       <!-- Local Data Management Actions -->
+       <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
+         <div style="color:#00796b;font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px;">
+           <span>📦</span>
+           <span>จัดการข้อมูลการจองในเครื่องนี้</span>
+         </div>
+         <div style="display:flex;gap:8px;flex-wrap:wrap;">
+           <button onclick="triggerBookingImport()" style="padding:10px 16px;background:linear-gradient(135deg,#4dd0e1 0%,#26c6da 100%);color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px;">
+             <span>📥</span>
+             <span>นำเข้าข้อมูล</span>
+           </button>
+           <button onclick="downloadBookingData()" style="padding:10px 16px;background:linear-gradient(135deg,#66bb6a 0%,#43a047 100%);color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px;">
+             <span>💾</span>
+             <span>ดาวน์โหลด JSON</span>
+           </button>
+           <button onclick="copyBookingDataToClipboard()" style="padding:10px 16px;background:#f5f5f5;color:#00796b;border:2px solid #b2ebf2;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px;">
+             <span>📋</span>
+             <span>คัดลอก JSON</span>
+           </button>
+         </div>
+       </div>
+       <input type="file" id="booking-import-file" accept="application/json" style="display:none;" />
+       
        
        <!-- Subtab Navigation -->
        <div style="display:flex;gap:12px;margin-bottom:24px;border-bottom:2px solid #e0e0e0;flex-wrap:wrap;">
@@ -73,6 +96,15 @@
          <div id="booking-calendar" style="background:white;padding:16px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
            <!-- Calendar will be populated here -->
          </div>
+        <div id="booking-empty-state" style="display:none;margin-top:16px;padding:16px;border-radius:10px;border:2px dashed #4dd0e1;background:linear-gradient(135deg,#f1f9ff 0%,#e0f7fa 100%);color:#00796b;align-items:center;gap:12px;flex-wrap:wrap;">
+          <div style="flex:1;min-width:220px;font-size:14px;font-weight:500;line-height:1.5;">
+            ยังไม่มีข้อมูลการจองในเครื่องนี้ กรุณานำเข้าข้อมูลจากไฟล์สำรอง (.json) เพื่อแสดงปฏิทินการจอง และปุ่มเมนูย่อยจะทำงานได้ตามปกติ
+          </div>
+          <button onclick="triggerBookingImport()" style="padding:10px 18px;background:linear-gradient(135deg,#4dd0e1 0%,#26c6da 100%);color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px;">
+            <span>📥</span>
+            <span>นำเข้าข้อมูล</span>
+          </button>
+        </div>
        </div>
 
        <!-- Tab 2: Booking Confirmed -->
