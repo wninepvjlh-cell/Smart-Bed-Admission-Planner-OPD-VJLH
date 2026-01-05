@@ -11,52 +11,62 @@
 /**
  * ฟังก์ชันสำหรับบันทึกข้อมูลผู้ป่วยหอผู้ป่วยในชั้น 2 แยกตามเตียง
  */
-function saveIPDFloor2Data(e) {
+function doGet(e) {
+  const buildResponse = function(payload) {
+    const output = ContentService
+      .createTextOutput(JSON.stringify(payload))
+      .setMimeType(ContentService.MimeType.JSON);
+    output.setHeader('Access-Control-Allow-Origin', '*');
+    output.setHeader('Access-Control-Allow-Headers', '*');
+    output.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    return output;
+  };
+
   try {
-    const data = JSON.parse(e.postData.contents);
-    const bedNumber = data.bed_number;
-    
-    if (!bedNumber) {
-      return ContentService.createTextOutput(JSON.stringify({
-        status: 'error',
-        message: 'ไม่พบหมายเลขเตียง'
-      })).setMimeType(ContentService.MimeType.JSON);
-    }
-    
     const ss = SpreadsheetApp.getActiveSpreadsheet();
-    
-    // ตรวจสอบว่ามี Sheet ของเตียงนี้หรือยัง
-    let sheet = ss.getSheetByName(bedNumber);
-    
-    // ถ้ายังไม่มี ให้สร้างใหม่
+    const sheet = ss.getSheetByName('admitted') || ss.getActiveSheet();
     if (!sheet) {
-      sheet = ss.insertSheet(bedNumber);
-      
-      // สร้างหัวตาราง
-      sheet.appendRow([
-        'วันที่บันทึก',
-        'เวลาบันทึก',
-        'HN',
-        'ชื่อผู้ป่วย',
-        'อายุ',
-        'เพศ',
-        'Diagnosis',
-        'แพทย์',
-        'วันที่ Admit',
-        'วันที่จำหน่าย',
-        'สถานะ',
-        'IMC/Non-IMC',
-        'หมายเหตุ',
-        'Timestamp'
-      ]);
-      
-      // จัดรูปแบบหัวตาราง
-      const headerRange = sheet.getRange(1, 1, 1, 14);
-      headerRange.setBackground('#00796b');
-      headerRange.setFontColor('#ffffff');
-      headerRange.setFontWeight('bold');
-      headerRange.setHorizontalAlignment('center');
-      headerRange.setVerticalAlignment('middle');
+      return buildResponse({
+        status: 'error',
+        message: 'ไม่พบชีต admitted'
+      });
+    }
+
+    const values = sheet.getDataRange().getValues();
+
+    if (values.length <= 1) {
+      return buildResponse({
+        status: 'success',
+        count: 0,
+        data: []
+      });
+    }
+
+    const headers = values[0];
+    const records = values.slice(1)
+      .filter(row => row.some(cell => cell !== ''))
+      .map(row => {
+        const item = {};
+        headers.forEach((header, i) => {
+          const key = header && header.toString().trim() ? header.toString().trim() : `column_${i + 1}`;
+          item[key] = row[i];
+        });
+        return item;
+      });
+
+    return buildResponse({
+      status: 'success',
+      count: records.length,
+      data: records
+    });
+
+  } catch (error) {
+    return buildResponse({
+      status: 'error',
+      message: error.toString()
+    });
+  }
+}
       headerRange.setWrap(true);
       
       // ตั้งความกว้างคอลัมน์

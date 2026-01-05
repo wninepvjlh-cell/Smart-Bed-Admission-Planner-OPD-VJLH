@@ -43,10 +43,10 @@
 })();
 
 // Google Apps Script endpoint for syncing booked bookings to Google Sheets
-const BOOKED_SHEET_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbw2CG9_2tZaM_Ommt3Z2HPmPoFH_2_FNtr1oLlXMaA9CyAs3qiTBtODQ2YB74NQ_ujo5w/exec';
+const BOOKED_SHEET_WEB_APP_URL = (window.SBPSheetEndpoints && window.SBPSheetEndpoints.booked) || 'https://script.google.com/macros/s/AKfycbw2CG9_2tZaM_Ommt3Z2HPmPoFH_2_FNtr1oLlXMaA9CyAs3qiTBtODQ2YB74NQ_ujo5w/exec';
 
 // Google Apps Script endpoint for confirmed bookings
-const CONFIRMED_SHEET_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbx06ftWZO2wiPzDTFhMv7Vmnxh_PPqCcClx5d8gRoav9dvkikdX6ay1szCsD3bexx32eg/exec';
+const CONFIRMED_SHEET_WEB_APP_URL = (window.SBPSheetEndpoints && window.SBPSheetEndpoints.confirmed) || 'https://script.google.com/macros/s/AKfycbx06ftWZO2wiPzDTFhMv7Vmnxh_PPqCcClx5d8gRoav9dvkikdX6ay1szCsD3bexx32eg/exec';
 
 // Reschedule a confirmed booking: move from confirmed to booked if bed is available
 function rescheduleConfirmedBooking(bookingId, newFormData) {
@@ -228,20 +228,23 @@ function autoAllocateBed(bedType, admitDate) {
 // Storage for bookings (in real app, would be backend)
 let bookingStorage = {
   booked: [],
-  admitted: []
+  confirmed: [],
+  admitted: [],
+  cancelled: []
 };
 
 function refreshBookingStorageFromLocal() {
   const stored = localStorage.getItem('bookingData');
   if (!stored) {
-    bookingStorage = { booked: [], admitted: [] };
+    bookingStorage = { booked: [], confirmed: [], admitted: [], cancelled: [] };
     return;
   }
   try {
-    bookingStorage = JSON.parse(stored) || { booked: [], admitted: [] };
+    const parsed = JSON.parse(stored) || {};
+    bookingStorage = normalizeBookingDataset(parsed);
   } catch (error) {
     console.warn('Unable to parse bookingData from localStorage', error);
-    bookingStorage = { booked: [], admitted: [] };
+    bookingStorage = { booked: [], confirmed: [], admitted: [], cancelled: [] };
   }
 }
 
@@ -261,6 +264,15 @@ function ensureBookingStorageReady() {
   }
 }
 
+function normalizeBookingDataset(data) {
+  return {
+    booked: Array.isArray(data && data.booked) ? data.booked : [],
+    confirmed: Array.isArray(data && data.confirmed) ? data.confirmed : [],
+    admitted: Array.isArray(data && data.admitted) ? data.admitted : [],
+    cancelled: Array.isArray(data && data.cancelled) ? data.cancelled : []
+  };
+}
+
 function handleBookingStorageBroadcast(key) {
   if (!key || key === 'bookingData') {
     refreshBookingStorageFromLocal();
@@ -276,6 +288,11 @@ window.addEventListener('storage', function(event) {
 window.addEventListener('sbpRemoteStorageSync', function(event) {
   const detail = event && event.detail;
   handleBookingStorageBroadcast(detail && typeof detail.key === 'string' ? detail.key : undefined);
+});
+
+window.addEventListener('sbpBookingDataSynced', function(event) {
+  const dataset = normalizeBookingDataset(event && event.detail);
+  bookingStorage = dataset;
 });
 
 // Load patient data when HN is entered
@@ -619,15 +636,18 @@ function handleAdmitSubmit() {
     cancelled: [] 
   };
   
-  bookingData.confirmed.push({
+  const confirmTimestamp = new Date().toISOString();
+  const confirmedRecord = {
     ...formData,
-    booking_date: new Date().toISOString(),
-    confirm_date: new Date().toISOString(),
+    booking_date: confirmTimestamp,
+    confirm_date: confirmTimestamp,
     call_note: 'จองผ่านระบบ - ไม่ต้องโทรยืนยัน',
     id: 'BOOK_' + Date.now(),
     logged_by: loggedUser,
     action_note: `จองเตียง Admit โดย ${loggedUser}`
-  });
+  };
+  bookingData.confirmed.push(confirmedRecord);
+  bookingStorage.confirmed.push(confirmedRecord);
   
   // Save to localStorage
   localStorage.setItem('bookingData', JSON.stringify(bookingData));
@@ -673,7 +693,9 @@ function updateBookedListDisplay() {
   // Store in localStorage for cross-page communication
   localStorage.setItem('bookingData', JSON.stringify({
     booked: bookingStorage.booked,
-    admitted: bookingStorage.admitted
+    confirmed: bookingStorage.confirmed,
+    admitted: bookingStorage.admitted,
+    cancelled: bookingStorage.cancelled
   }));
   window.dispatchEvent(new Event('storage'));
 }
@@ -689,7 +711,9 @@ function updateWaitingListDisplay() {
   // Store in localStorage for cross-page communication
   localStorage.setItem('bookingData', JSON.stringify({
     booked: bookingStorage.booked,
-    admitted: bookingStorage.admitted
+    confirmed: bookingStorage.confirmed,
+    admitted: bookingStorage.admitted,
+    cancelled: bookingStorage.cancelled
   }));
   window.dispatchEvent(new Event('storage'));
 }
@@ -739,14 +763,18 @@ function handleBookingJSONImport(event) {
     try {
       const result = loadEvent && loadEvent.target ? loadEvent.target.result : '{}';
       const data = JSON.parse(result);
-      const merged = {
-        booked: Array.isArray(data.booked) ? data.booked : [],
-        confirmed: Array.isArray(data.confirmed) ? data.confirmed : [],
-        admitted: Array.isArray(data.admitted) ? data.admitted : [],
-        cancelled: Array.isArray(data.cancelled) ? data.cancelled : []
-      };
+      const merged = normalizeBookingDataset(data);
       localStorage.setItem('bookingData', JSON.stringify(merged));
       window.dispatchEvent(new Event('storage'));
+      bookingStorage = merged;
+      if (typeof window.sbpBackupBookingDatasetToSheets === 'function') {
+        window.sbpBackupBookingDatasetToSheets(merged);
+      }
+      if (typeof window.sbpSyncBookingDataFromSheets === 'function') {
+        setTimeout(function() {
+          window.sbpSyncBookingDataFromSheets({ updateLocalStorage: true, emitEvent: true });
+        }, 1500);
+      }
       alert('นำเข้าข้อมูลสำเร็จแล้ว ข้อมูลจองเตียงถูกอัปเดตเรียบร้อย');
     } catch (error) {
       console.error('Import booking data error:', error);
@@ -758,6 +786,12 @@ function handleBookingJSONImport(event) {
     }
   };
   reader.readAsText(file, 'utf-8');
+}
+
+if (typeof window.sbpSyncBookingDataFromSheets === 'function') {
+  window.sbpSyncBookingDataFromSheets({ updateLocalStorage: true, emitEvent: true }).catch(function(error) {
+    console.warn('Booking page sheet sync error:', error);
+  });
 }
 
 // Export functions to global scope for HTML inline event handlers

@@ -43,7 +43,7 @@
 })();
 
 // Google Apps Script endpoints for remote booking sync
-const CANCELLED_SHEET_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzUNE6qd20_gSMMBu7vuoJH-23mmP3FX7SERAK1vze7mhzgh7ry3H2gsJMfZHWWbvl1ZQ/exec';
+const CANCELLED_SHEET_WEB_APP_URL = (window.SBPSheetEndpoints && window.SBPSheetEndpoints.cancelled) || 'https://script.google.com/macros/s/AKfycbzUNE6qd20_gSMMBu7vuoJH-23mmP3FX7SERAK1vze7mhzgh7ry3H2gsJMfZHWWbvl1ZQ/exec';
 
 // Registry Functions
 
@@ -56,7 +56,7 @@ let currentYear = new Date().getFullYear();
 function loadBookingData() {
   const stored = localStorage.getItem('bookingData');
   if (!stored) {
-    return { booked: [], confirmed: [], admitted: [] };
+    return { booked: [], confirmed: [], admitted: [], cancelled: [] };
   }
   return JSON.parse(stored);
 }
@@ -111,6 +111,15 @@ async function handleBookingImport(event) {
       return;
     }
     localStorage.setItem('bookingData', JSON.stringify(normalized));
+    window.dispatchEvent(new Event('storage'));
+    if (typeof window.sbpBackupBookingDatasetToSheets === 'function') {
+      window.sbpBackupBookingDatasetToSheets(normalized);
+    }
+    if (typeof window.sbpSyncBookingDataFromSheets === 'function') {
+      setTimeout(() => {
+        window.sbpSyncBookingDataFromSheets({ updateLocalStorage: true, emitEvent: true });
+      }, 1500);
+    }
     displayBookingList();
     displayConfirmedList();
     alert('นำเข้าข้อมูลเรียบร้อยแล้ว');
@@ -1254,6 +1263,12 @@ function initializeRegistryPage() {
     importInput.addEventListener('change', handleBookingImport);
   }
 
+  if (typeof window.sbpSyncBookingDataFromSheets === 'function') {
+    window.sbpSyncBookingDataFromSheets({ updateLocalStorage: true, emitEvent: true }).catch(function(error) {
+      console.warn('Registry page sheet sync error:', error);
+    });
+  }
+
   setInterval(() => {
     const currentTab = document.getElementById('tab-booking-content').style.display === 'block' ? 'booking' : 'confirmed';
     if (currentTab === 'booking') {
@@ -1306,4 +1321,13 @@ window.addEventListener('storage', function(event) {
 window.addEventListener('sbpRemoteStorageSync', function(event) {
   const detail = event && event.detail;
   handleRegistryStorageUpdate(detail && typeof detail.key === 'string' ? detail.key : undefined);
+});
+
+window.addEventListener('sbpBookingDataSynced', function() {
+  try {
+    displayBookingList();
+    displayConfirmedList();
+  } catch (error) {
+    console.warn('Unable to refresh registry lists after sheet sync', error);
+  }
 });

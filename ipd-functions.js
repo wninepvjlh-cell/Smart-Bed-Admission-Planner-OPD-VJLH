@@ -43,7 +43,7 @@
 })();
 
 // Google Apps Script endpoint for syncing admitted IPD data
-const ADMITTED_SHEET_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyAoKbR8wKXK2EjAI2pWBaSMgHJncB--7BKDmCRaVr_AbiKCkQ7BvhsehwH50gadJ0l/exec';
+const ADMITTED_SHEET_WEB_APP_URL = (window.SBPSheetEndpoints && window.SBPSheetEndpoints.admitted) || 'https://script.google.com/macros/s/AKfycbyAoKbR8wKXK2EjAI2pWBaSMgHJncB--7BKDmCRaVr_AbiKCkQ7BvhsehwH50gadJ0l/exec';
 
 function normalizeAdmitValue(value) {
   return (value || '').toString().trim().toLowerCase();
