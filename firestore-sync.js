@@ -56,13 +56,6 @@
     }
     syncDisabled = true;
     window.__sbpFirestoreSyncEnabled = false;
-    if (typeof window.__sbpDataPurge === 'function') {
-      try {
-        window.__sbpDataPurge();
-      } catch (purgeError) {
-        console.warn('[FirestoreSync] Unable to run fallback purge after disabling sync', purgeError);
-      }
-    }
     if (unsubscribeSnapshot) {
       try {
         unsubscribeSnapshot();
