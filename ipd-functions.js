@@ -1016,8 +1016,6 @@ function savePatientChanges() {
     localStorage.setItem('bookingData', JSON.stringify(bookingData));
     
     // Google Sheets sync disabled
-      })
-    }).catch(error => console.log('Google Sheets backup:', error));
     
     alert(`✅ บันทึกข้อมูลสำเร็จ${oldBed !== newBed ? '\n(เตียงเปลี่ยนจาก ' + oldBed + ' เป็น ' + newBed + ')' : ''}\n\n✓ ข้อมูลถูกสำรองลง Google Sheets แล้ว`);
     
@@ -1157,8 +1155,6 @@ function confirmRefer() {
   localStorage.setItem('bookingData', JSON.stringify(bookingData));
   
   // Google Sheets sync disabled
-    })
-  }).catch(error => console.log('Google Sheets backup:', error));
   
   alert(`✅ Refer ผู้ป่วยเรียบร้อยแล้ว\nส่งต่อไปยัง: ${hospitalName}\n\n✓ ข้อมูลถูกสำรองลง Google Sheets แล้ว`);
   
