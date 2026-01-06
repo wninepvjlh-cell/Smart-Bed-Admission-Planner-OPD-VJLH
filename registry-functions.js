@@ -789,21 +789,29 @@ function enableConfirmedDetailEdit() {
 
 function saveConfirmedDetailEdit() {
   // Get values from inputs
-  const hn = document.getElementById('confirmed-detail-hn').value.trim();
-  const name = document.getElementById('confirmed-detail-name').value.trim();
-  const age = parseInt(document.getElementById('confirmed-detail-age').value, 10) || '';
-  const gender = document.getElementById('confirmed-detail-gender').value;
-  const phone = document.getElementById('confirmed-detail-phone').value.trim();
-  const diagnosis = document.getElementById('confirmed-detail-diagnosis').value.trim();
-  const diseaseDate = document.getElementById('confirmed-detail-disease-date').value;
-  const doctor = document.getElementById('confirmed-detail-doctor').value.trim();
-  const admitDate = document.getElementById('confirmed-detail-admit-date').value;
-  const bedType = document.getElementById('confirmed-detail-bed-type').value;
-  const bed = document.getElementById('confirmed-detail-bed').value.trim();
-  const waiting = document.getElementById('confirmed-detail-waiting').value.trim();
-  const lab = document.getElementById('confirmed-detail-lab').value.trim();
-  const channel = document.getElementById('confirmed-detail-channel').value.trim();
-  const refer = document.getElementById('confirmed-detail-refer').value.trim();
+  const getValue = (id) => {
+    const el = document.getElementById(id);
+    return el && typeof el.value === 'string' ? el.value.trim() : '';
+  };
+  const getValueRaw = (id) => {
+    const el = document.getElementById(id);
+    return el && typeof el.value === 'string' ? el.value : '';
+  };
+  const hn = getValue('confirmed-detail-hn');
+  const name = getValue('confirmed-detail-name');
+  const age = parseInt(getValueRaw('confirmed-detail-age'), 10) || '';
+  const gender = getValueRaw('confirmed-detail-gender');
+  const phone = getValue('confirmed-detail-phone');
+  const diagnosis = getValue('confirmed-detail-diagnosis');
+  const diseaseDate = getValueRaw('confirmed-detail-disease-date');
+  const doctor = getValue('confirmed-detail-doctor');
+  const admitDate = getValueRaw('confirmed-detail-admit-date');
+  const bedType = getValueRaw('confirmed-detail-bed-type');
+  const bed = getValue('confirmed-detail-bed');
+  const waiting = getValue('confirmed-detail-waiting');
+  const lab = getValue('confirmed-detail-lab');
+  const channel = getValue('confirmed-detail-channel');
+  const refer = getValue('confirmed-detail-refer');
 
   // IMC status recalc: IMC if disease onset < 14 days, else Non-IMC
   let imc = document.getElementById('confirmed-detail-imc').value.trim();
