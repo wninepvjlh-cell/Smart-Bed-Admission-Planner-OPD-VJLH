@@ -701,7 +701,8 @@ function openConfirmedDetailModal(hn) {
   document.getElementById('confirmed-detail-doctor').value = patient.attending_doctor || '';
   
   // Section 3: Booking Info
-  document.getElementById('confirmed-detail-admit-date').textContent = patient.admit_date || '-';
+  const admitDateInput = document.getElementById('confirmed-detail-admit-date');
+  if (admitDateInput) admitDateInput.value = patient.admit_date || '';
 
   document.getElementById('confirmed-detail-bed-type').textContent = patient.bed_type === 'vip' ? '⭐ ห้องพิเศษ' : (patient.bed_type === 'standard' ? '🛏️ เตียงสามัญ' : '-');
   document.getElementById('confirmed-detail-bed').value = patient.assigned_bed || '';
@@ -772,7 +773,7 @@ function setConfirmedDetailInputsDisabled(disabled) {
 }
 
 function enableConfirmedDetailEdit() {
-  const editableIds = ['confirmed-detail-hn', 'confirmed-detail-name', 'confirmed-detail-age'];
+  const editableIds = ['confirmed-detail-hn', 'confirmed-detail-name', 'confirmed-detail-age', 'confirmed-detail-admit-date'];
   editableIds.forEach(id => {
     const el = document.getElementById(id);
     if (!el) {
