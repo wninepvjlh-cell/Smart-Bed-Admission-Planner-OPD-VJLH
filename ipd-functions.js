@@ -1387,13 +1387,13 @@ function createBedElement(bedId, patient, bedType) {
       <div style="text-align:center;">
         <p style="font-size:12px;color:#666;margin:0 0 4px 0;">เตียง ${bedId}</p>
         <p style="font-size:14px;font-weight:600;color:${textColor};margin:0 0 8px 0;">${patient.patient_name}</p>
-        <p style="font-size:11px;color:#666;margin:0;">HN: ${patient.patient_hn}</p>
+        <!-- HN will be shown only at the bottom -->
         ${los ? `<p style='font-size:11px;color:#0288d1;margin:2px 0 0 0;font-weight:700;'>LOS: ${los}</p>` : ''}
         ${hasResistantBacteria && cultureNames.length > 0 ? `<p style='font-size:12px;color:#d32f2f;font-weight:700;margin:8px 0 0 0;'>${cultureNames.join(', ')}</p>` : ''}
         ${precautionLabel}
       </div>
       <div style="margin-top:8px;text-align:center;font-size:12px;color:#00796b;font-weight:700;">
-        <span class="bed-updated-hn">${patient.patient_hn}</span>
+        <span class="bed-updated-hn">HN: ${patient.patient_hn}</span>
       </div>
     `;
   } else {
