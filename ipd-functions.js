@@ -1392,7 +1392,7 @@ function createBedElement(bedId, patient, bedType) {
         ${precautionLabel}
       </div>
       <div style="margin-top:8px;text-align:center;font-size:12px;color:#00796b;font-weight:700;">
-        <span class="bed-updated-hn">${patient.patient_hn}</span>
+        <span class="bed-updated-hn">HN: ${patient.patient_hn}</span>
       </div>
     `;
   } else {
