@@ -582,7 +582,7 @@ function createWaitingPatientCard(patient, floor) {
 function showWaitingPatientModal(patient) {
   selectedPatient = patient;
   document.getElementById('modal-patient-name').textContent = patient.patient_name;
-  document.getElementById('modal-patient-hn').textContent = patient.patient_hn;
+  document.getElementById('modal-patient-hn').value = patient.patient_hn;
   document.getElementById('modal-patient-diagnosis').textContent = patient.diagnosis;
   document.getElementById('modal-patient-doctor').textContent = patient.doctor_name;
   document.getElementById('modal-patient-admitted-date').textContent = patient.admit_date || '-';
@@ -800,7 +800,7 @@ function showAdmittedPatientModal(patient) {
     playAdmitSound();
   selectedPatient = patient;
   document.getElementById('modal-patient-name').textContent = patient.patient_name || '-';
-  document.getElementById('modal-patient-hn').textContent = patient.patient_hn || '-';
+  document.getElementById('modal-patient-hn').value = patient.patient_hn || '';
   
   // Additional patient information
   document.getElementById('modal-patient-age').textContent = (patient.patient_age || patient.age || '-') + (patient.patient_age || patient.age ? ' ปี' : '');
