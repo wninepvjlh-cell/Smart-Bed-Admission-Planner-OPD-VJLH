@@ -1370,6 +1370,9 @@ function createBedElement(bedId, patient, bedType) {
         ${hasResistantBacteria && cultureNames.length > 0 ? `<p style='font-size:12px;color:#d32f2f;font-weight:700;margin:8px 0 0 0;'>${cultureNames.join(', ')}</p>` : ''}
         ${precautionLabel}
       </div>
+      <div style="margin-top:8px;text-align:center;font-size:12px;color:#00796b;font-weight:700;">
+        <span>HN ล่าสุด: <span class="bed-updated-hn">${patient.patient_hn}</span></span>
+      </div>
     `;
   } else {
     // Empty bed - white background
