@@ -965,6 +965,8 @@ function updateDischargeButton(dischargeDate) {
 
 // Save patient changes
 function savePatientChanges() {
+    // Get the new HN value from the input field
+    const newHN = document.getElementById('modal-patient-hn').value.trim();
   if (!selectedPatient) return;
   
   const newBed = document.getElementById('modal-patient-bed').value.trim();
@@ -986,10 +988,15 @@ function savePatientChanges() {
   const bookingData = JSON.parse(localStorage.getItem('bookingData')) || { booked: [], admitted: [] };
   
   // Find and update patient
+  // Find patient by old HN (selectedPatient.patient_hn)
   const patientIndex = bookingData.admitted.findIndex(p => p.patient_hn === selectedPatient.patient_hn);
   const loggedUser = sessionStorage.getItem('app_user_name') || 'Unknown';
   
   if (patientIndex !== -1) {
+    // Update HN if changed
+    bookingData.admitted[patientIndex].patient_hn = newHN;
+    // Also update selectedPatient for further logic
+    selectedPatient.patient_hn = newHN;
     const oldBed = bookingData.admitted[patientIndex].assigned_bed;
     const oldDischargeDate = bookingData.admitted[patientIndex].expected_discharge_date;
     
