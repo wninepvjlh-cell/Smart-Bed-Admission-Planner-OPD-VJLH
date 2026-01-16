@@ -1022,12 +1022,34 @@ function savePatientChanges() {
     // Sync resistant bacteria to ipdData for archive search
     syncResistantBacteriaToIpdData();
 
-    // Close modal and reload
+    // Update only the HN at the bottom of the specific bed card (if visible)
+    // Find the bed card by assigned_bed and update the .bed-updated-hn span
+    if (bookingData.admitted[patientIndex].assigned_bed) {
+      const bedId = bookingData.admitted[patientIndex].assigned_bed;
+      // Try both standard and special bed lists
+      const bedLists = [
+        document.getElementById('floor-2-standard-list'),
+        document.getElementById('floor-2-special-list')
+      ];
+      for (const list of bedLists) {
+        if (!list) continue;
+        const cards = list.children;
+        for (const card of cards) {
+          // Find the bed number in the card
+          const bedLabel = card.querySelector('p');
+          if (bedLabel && bedLabel.textContent && bedLabel.textContent.includes(bedId)) {
+            const hnSpan = card.querySelector('.bed-updated-hn');
+            if (hnSpan) {
+              hnSpan.textContent = bookingData.admitted[patientIndex].patient_hn;
+            }
+            break;
+          }
+        }
+      }
+    }
+
+    // Close modal (do not reload all beds)
     closePatientModal();
-    // Reload the current floor
-    const floor1Btn = document.getElementById('btn-floor-1');
-    const currentFloor = floor1Btn.style.background.includes('linear-gradient') ? 1 : 2;
-    loadIPDFloor(currentFloor);
   }
 }
 
