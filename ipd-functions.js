@@ -585,7 +585,7 @@ function showWaitingPatientModal(patient) {
   document.getElementById('modal-patient-hn').value = patient.patient_hn;
   document.getElementById('modal-patient-diagnosis').textContent = patient.diagnosis;
   document.getElementById('modal-patient-doctor').textContent = patient.doctor_name;
-  document.getElementById('modal-patient-admitted-date').textContent = patient.admit_date || '-';
+    document.getElementById('modal-patient-admitted-date').value = patient.admit_date || '';
   document.getElementById('modal-patient-discharge-date').textContent = patient.expected_discharge_date || '-';
   document.getElementById('patient-modal').style.display = 'flex';
 }
@@ -886,7 +886,7 @@ function showAdmittedPatientModal(patient) {
     }
   }
 
-  document.getElementById('modal-patient-admitted-date').textContent = patient.admitted_date ? formatDateThai(patient.admitted_date) : (patient.admit_date ? formatDateThai(patient.admit_date) : '-');
+      document.getElementById('modal-patient-admitted-date').value = patient.admitted_date ? formatDateThai(patient.admitted_date) : (patient.admit_date ? formatDateThai(patient.admit_date) : '-');
   document.getElementById('modal-patient-discharge-date').value = patient.expected_discharge_date || '';
   document.getElementById('modal-patient-notes').value = patient.notes || '';
 
@@ -965,6 +965,8 @@ function updateDischargeButton(dischargeDate) {
 
 // Save patient changes
 function savePatientChanges() {
+      // Get new admit date from modal input
+      const newAdmitDate = document.getElementById('modal-patient-admitted-date').value;
     // Get the new HN value from the input field
     const newHN = document.getElementById('modal-patient-hn').value.trim();
   if (!selectedPatient) return;
@@ -1001,6 +1003,7 @@ function savePatientChanges() {
     const oldDischargeDate = bookingData.admitted[patientIndex].expected_discharge_date;
     
     bookingData.admitted[patientIndex].assigned_bed = newBed;
+    bookingData.admitted[patientIndex].admit_date = newAdmitDate;
     bookingData.admitted[patientIndex].doctor_name = newDoctor;
     bookingData.admitted[patientIndex].expected_discharge_date = newDischargeDate;
     bookingData.admitted[patientIndex].notes = newNotes;
