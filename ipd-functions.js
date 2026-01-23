@@ -1004,6 +1004,7 @@ function savePatientChanges() {
     
     bookingData.admitted[patientIndex].assigned_bed = newBed;
     bookingData.admitted[patientIndex].admit_date = newAdmitDate;
+    bookingData.admitted[patientIndex].admitted_date = newAdmitDate;
     bookingData.admitted[patientIndex].doctor_name = newDoctor;
     bookingData.admitted[patientIndex].expected_discharge_date = newDischargeDate;
     bookingData.admitted[patientIndex].notes = newNotes;
