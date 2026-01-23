@@ -886,7 +886,7 @@ function showAdmittedPatientModal(patient) {
     }
   }
 
-      document.getElementById('modal-patient-admitted-date').value = patient.admitted_date ? formatDateThai(patient.admitted_date) : (patient.admit_date ? formatDateThai(patient.admit_date) : '-');
+      document.getElementById('modal-patient-admitted-date').value = patient.admitted_date || patient.admit_date || '';
   document.getElementById('modal-patient-discharge-date').value = patient.expected_discharge_date || '';
   document.getElementById('modal-patient-notes').value = patient.notes || '';
 
