@@ -1059,8 +1059,8 @@ function savePatientChanges() {
       }
     }
 
-    // Close modal (do not reload all beds)
-    closePatientModal();
+    // Refresh modal with updated data so admit date and LOS update immediately
+    showAdmittedPatientModal(bookingData.admitted[patientIndex]);
   }
 }
 
