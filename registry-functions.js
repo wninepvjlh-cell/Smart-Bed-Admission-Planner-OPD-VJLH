@@ -538,7 +538,7 @@ function displayConfirmedList() {
 
   container.innerHTML =
     renderGroup(standardList, 'standard') +
-    (standardList.length && specialList.length ? "<hr style='margin:32px 0;border:0;border-top:2px dashed #b2dfdb;'>" : "") +
+    (standardList.length && specialList.length ? "<div style='height:32px;'></div>" : "") +
     renderGroup(specialList, 'special') +
     `<div style='margin-top:24px;'>
       <span style='display:inline-block;background:#fff9c4;border-radius:8px;padding:6px 16px;font-size:14px;color:#e65100;font-weight:600;margin-right:8px;'>ช่องสีเหลือง</span>
