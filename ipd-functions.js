@@ -940,18 +940,32 @@ function closePatientModal() {
 // Update discharge button state based on date
 function updateDischargeButton(dischargeDate) {
   const dischargeBtn = document.getElementById('discharge-btn');
-  // Always enable discharge button if dischargeDate exists
   if (!dischargeDate) {
     dischargeBtn.disabled = true;
     dischargeBtn.style.opacity = '0.5';
     dischargeBtn.style.cursor = 'not-allowed';
+    dischargeBtn.style.background = 'linear-gradient(135deg, #ffccbc 0%, #ffab91 100%)';
+    dischargeBtn.style.color = '#bf360c';
     return;
   }
-  dischargeBtn.disabled = false;
-  dischargeBtn.style.opacity = '1';
-  dischargeBtn.style.cursor = 'pointer';
-  dischargeBtn.style.background = 'linear-gradient(135deg, #66bb6a 0%, #43a047 100%)';
-  dischargeBtn.style.color = 'white';
+  // Only enable if today >= dischargeDate
+  const todayObj = new Date();
+  const dischargeObj = new Date(dischargeDate);
+  todayObj.setHours(0,0,0,0);
+  dischargeObj.setHours(0,0,0,0);
+  if (todayObj.getTime() >= dischargeObj.getTime()) {
+    dischargeBtn.disabled = false;
+    dischargeBtn.style.opacity = '1';
+    dischargeBtn.style.cursor = 'pointer';
+    dischargeBtn.style.background = 'linear-gradient(135deg, #66bb6a 0%, #43a047 100%)';
+    dischargeBtn.style.color = 'white';
+  } else {
+    dischargeBtn.disabled = true;
+    dischargeBtn.style.opacity = '0.5';
+    dischargeBtn.style.cursor = 'not-allowed';
+    dischargeBtn.style.background = 'linear-gradient(135deg, #ffccbc 0%, #ffab91 100%)';
+    dischargeBtn.style.color = '#bf360c';
+  }
 }
 
 // Save patient changes
