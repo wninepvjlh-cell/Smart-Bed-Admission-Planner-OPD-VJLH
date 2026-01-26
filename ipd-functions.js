@@ -940,28 +940,18 @@ function closePatientModal() {
 // Update discharge button state based on date
 function updateDischargeButton(dischargeDate) {
   const dischargeBtn = document.getElementById('discharge-btn');
+  // Always enable discharge button if dischargeDate exists
   if (!dischargeDate) {
     dischargeBtn.disabled = true;
     dischargeBtn.style.opacity = '0.5';
     dischargeBtn.style.cursor = 'not-allowed';
     return;
   }
-  
-  const todayObj = new Date();
-  const dischargeObj = new Date(dischargeDate);
-  if (!isNaN(dischargeObj.getTime()) && todayObj.getTime() >= dischargeObj.getTime()) {
-    dischargeBtn.disabled = false;
-    dischargeBtn.style.opacity = '1';
-    dischargeBtn.style.cursor = 'pointer';
-    dischargeBtn.style.background = 'linear-gradient(135deg, #66bb6a 0%, #43a047 100%)';
-    dischargeBtn.style.color = 'white';
-  } else {
-    dischargeBtn.disabled = true;
-    dischargeBtn.style.opacity = '0.5';
-    dischargeBtn.style.cursor = 'not-allowed';
-    dischargeBtn.style.background = 'linear-gradient(135deg, #ffccbc 0%, #ffab91 100%)';
-    dischargeBtn.style.color = '#bf360c';
-  }
+  dischargeBtn.disabled = false;
+  dischargeBtn.style.opacity = '1';
+  dischargeBtn.style.cursor = 'pointer';
+  dischargeBtn.style.background = 'linear-gradient(135deg, #66bb6a 0%, #43a047 100%)';
+  dischargeBtn.style.color = 'white';
 }
 
 // Save patient changes
@@ -1205,15 +1195,14 @@ function confirmRefer() {
 // Discharge patient
 function dischargePatient() {
   if (!selectedPatient) return;
-  
   const dischargeDate = document.getElementById('modal-patient-discharge-date').value;
-  const today = new Date().toISOString().split('T')[0];
-  
-  if (today !== dischargeDate) {
-    alert('❌ ไม่สามารถจำหน่ายได้ เนื่องจากยังไม่ถึงวันที่จำหน่าย\nวันที่จำหน่าย: ' + dischargeDate);
+  const todayObj = new Date();
+  const today = todayObj.toISOString().split('T')[0];
+  // Allow discharge at any time, just require a date to be selected
+  if (!dischargeDate) {
+    alert('❌ กรุณาระบุวันที่จำหน่าย');
     return;
   }
-  
   if (!confirm('ยืนยันการจำหน่ายผู้ป่วย ' + selectedPatient.patient_name + '?')) {
     return;
   }
