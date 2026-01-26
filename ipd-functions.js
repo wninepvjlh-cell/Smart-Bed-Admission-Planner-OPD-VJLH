@@ -1196,8 +1196,6 @@ function confirmRefer() {
 function dischargePatient() {
   if (!selectedPatient) return;
   const dischargeDate = document.getElementById('modal-patient-discharge-date').value;
-  const todayObj = new Date();
-  const today = todayObj.toISOString().split('T')[0];
   // Allow discharge at any time, just require a date to be selected
   if (!dischargeDate) {
     alert('❌ กรุณาระบุวันที่จำหน่าย');
@@ -1208,26 +1206,26 @@ function dischargePatient() {
   }
 
   const bookingData = JSON.parse(localStorage.getItem('bookingData')) || { booked: [], admitted: [], discharged: [] };
-  
-  // เพิ่มข้อมูลผู้ป่วยที่จำหน่ายพร้อมวันที่จำหน่าย
+
+  // เพิ่มข้อมูลผู้ป่วยที่จำหน่ายพร้อมวันที่จำหน่าย (ใช้วันที่ที่เลือก)
   const dischargedPatient = {
     ...selectedPatient,
-    discharge_date: today,
+    discharge_date: dischargeDate,
     discharged_at: new Date().toISOString()
   };
-  
+
   // เพิ่มลงใน discharged array
   if (!bookingData.discharged) {
     bookingData.discharged = [];
   }
   bookingData.discharged.push(dischargedPatient);
-  
+
   // Remove from admitted list
   bookingData.admitted = bookingData.admitted.filter(p => p.patient_hn !== selectedPatient.patient_hn);
-  
+
   // Save to localStorage
   localStorage.setItem('bookingData', JSON.stringify(bookingData));
-  
+
   // Backup to Google Sheets
   fetch(ADMITTED_SHEET_WEB_APP_URL, {
     method: 'POST',
@@ -1239,18 +1237,18 @@ function dischargePatient() {
       patient_name: selectedPatient.patient_name,
       assigned_bed: selectedPatient.assigned_bed,
       admitted_date: selectedPatient.admitted_date,
-      discharge_date: today,
+      discharge_date: dischargeDate,
       doctor_name: selectedPatient.doctor_name,
       diagnosis: selectedPatient.diagnosis,
       timestamp: new Date().toISOString()
     })
   }).catch(error => console.log('Google Sheets backup:', error));
-  
+
   alert('✅ จำหน่ายผู้ป่วยเรียบร้อยแล้ว\n\n✓ ข้อมูลถูกสำรองลง Google Sheets แล้ว');
-  
+
   // Close modal and reload
   closePatientModal();
-  
+
   // Reload the current floor
   const floor1Btn = document.getElementById('btn-floor-1');
   const currentFloor = floor1Btn.style.background.includes('linear-gradient') ? 1 : 2;
