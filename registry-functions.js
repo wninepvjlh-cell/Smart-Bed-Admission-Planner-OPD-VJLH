@@ -496,16 +496,20 @@ function displayConfirmedList() {
   
   confirmedList.forEach((booking, index) => {
     const card = document.createElement('div');
-    card.style.cssText = 'background:white;border-radius:12px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.08);cursor:pointer;transition:all 0.2s;border:2px solid transparent;';
+    // Highlight if postponed
+    const isPostponed = booking.postponed || booking.postpone_reason || booking.new_admit_date;
+    card.style.cssText = (isPostponed
+      ? 'background:#fff9c4;border-radius:12px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.08);cursor:pointer;transition:all 0.2s;border:2px solid #ffe082;'
+      : 'background:white;border-radius:12px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.08);cursor:pointer;transition:all 0.2s;border:2px solid transparent;');
     card.onmouseover = () => {
       card.style.transform = 'translateY(-4px)';
       card.style.boxShadow = '0 6px 20px rgba(102,187,106,0.15)';
-      card.style.borderColor = '#66bb6a';
+      card.style.borderColor = isPostponed ? '#ffe082' : '#66bb6a';
     };
     card.onmouseout = () => {
       card.style.transform = 'translateY(0)';
       card.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)';
-      card.style.borderColor = 'transparent';
+      card.style.borderColor = isPostponed ? '#ffe082' : 'transparent';
     };
     card.onclick = () => openConfirmedDetailModal(booking.patient_hn);
     
