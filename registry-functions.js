@@ -514,7 +514,7 @@ function displayConfirmedList() {
     list.forEach((booking, index) => {
       const isPostponed = booking.postponed === true;
       html += `<div style='position:relative;aspect-ratio:1/1;width:100%;max-width:220px;max-height:220px;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;align-items:stretch;min-height:0;${isPostponed
-        ? 'background:#fff9c4;border-radius:16px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.08);cursor:pointer;transition:all 0.2s;border:2px solid #ffe082;'
+        ? 'background:linear-gradient(135deg,#b2f7ef 0%,#7edce2 100%);border-radius:16px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.08);cursor:pointer;transition:all 0.2s;border:2px solid #4dd0e1;'
         : 'background:white;border-radius:16px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.08);cursor:pointer;transition:all 0.2s;border:2px solid transparent;'}'
         onclick='openConfirmedDetailModal("${booking.patient_hn}")'>
         <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:12px;">
