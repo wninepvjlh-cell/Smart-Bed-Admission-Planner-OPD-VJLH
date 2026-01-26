@@ -948,7 +948,7 @@ function updateDischargeButton(dischargeDate) {
     dischargeBtn.style.color = '#bf360c';
     return;
   }
-  // Only enable if today >= dischargeDate
+  // Enable if today >= dischargeDate (ย้อนหลังได้)
   const todayObj = new Date();
   const dischargeObj = new Date(dischargeDate);
   todayObj.setHours(0,0,0,0);
@@ -1220,6 +1220,7 @@ function dischargePatient() {
   // Set time to midnight for both dates for accurate comparison
   todayObj.setHours(0,0,0,0);
   dischargeObj.setHours(0,0,0,0);
+  // Allow discharge if today >= dischargeDate (ย้อนหลังได้)
   if (todayObj.getTime() < dischargeObj.getTime()) {
     alert('❌ ยังไม่ถึงวันที่จำหน่ายที่เลือกไว้\nวันที่จำหน่าย: ' + dischargeDate);
     return;
