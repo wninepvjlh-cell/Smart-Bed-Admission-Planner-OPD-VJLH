@@ -496,9 +496,20 @@ function displayConfirmedList() {
   const standardList = confirmedList.filter(b => !specialList.includes(b));
 
   // Helper to render a group
-  function renderGroup(list, title) {
+  function renderGroup(list, groupType) {
     if (list.length === 0) return '';
-    let html = `<div style='margin-bottom:24px;'><h3 style='color:#00796b;font-size:18px;font-weight:700;margin-bottom:12px;'>${title}</h3><div style='display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;'>`;
+    // Set icon and title by groupType
+    let icon = '', title = '';
+    if (groupType === 'standard') {
+      icon = `<span style="font-size:28px;margin-right:10px;vertical-align:middle;">🛏️</span>`;
+      title = 'กลุ่มเตียงสามัญ';
+    } else if (groupType === 'special') {
+      icon = `<span style="font-size:28px;margin-right:10px;vertical-align:middle;">🏩</span>`;
+      title = 'กลุ่มห้องพิเศษ';
+    }
+    let html = `<div style='margin-bottom:24px;'><h3 style='color:#00796b;font-size:20px;font-weight:700;margin-bottom:18px;display:flex;align-items:center;'>${icon}${title}</h3>`;
+    // Card grid: 3 per row
+    html += `<div style='display:grid;grid-template-columns:repeat(3,1fr);gap:16px;'>`;
     list.sort((a, b) => new Date(a.admit_date) - new Date(b.admit_date));
     list.forEach((booking, index) => {
       const isPostponed = booking.postponed === true;
@@ -526,9 +537,9 @@ function displayConfirmedList() {
   }
 
   container.innerHTML =
-    renderGroup(standardList, 'กลุ่มเตียงสามัญ') +
+    renderGroup(standardList, 'standard') +
     (standardList.length && specialList.length ? "<hr style='margin:32px 0;border:0;border-top:2px dashed #b2dfdb;'>" : "") +
-    renderGroup(specialList, 'กลุ่มห้องพิเศษ') +
+    renderGroup(specialList, 'special') +
     `<div style='margin-top:24px;'>
       <span style='display:inline-block;background:#fff9c4;border-radius:8px;padding:6px 16px;font-size:14px;color:#e65100;font-weight:600;margin-right:8px;'>ช่องสีเหลือง</span>
       <span style='font-size:14px;color:#333;'>หมายถึงผู้ป่วยที่ <b>เลื่อนนัด Admit</b></span>
