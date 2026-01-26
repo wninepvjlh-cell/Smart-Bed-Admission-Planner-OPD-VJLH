@@ -497,7 +497,7 @@ function displayConfirmedList() {
   confirmedList.forEach((booking, index) => {
     const card = document.createElement('div');
     // Highlight if postponed
-    const isPostponed = booking.postponed || booking.postpone_reason || booking.new_admit_date;
+    const isPostponed = booking.postponed === true;
     card.style.cssText = (isPostponed
       ? 'background:#fff9c4;border-radius:12px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.08);cursor:pointer;transition:all 0.2s;border:2px solid #ffe082;'
       : 'background:white;border-radius:12px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.08);cursor:pointer;transition:all 0.2s;border:2px solid transparent;');
