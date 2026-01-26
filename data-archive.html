@@ -581,8 +581,8 @@
         } else if (admitDate) {
           const startDate = formatDateTH(admitDate);
           if (p.current_status === 'discharged' && dischargeDate) {
-            // Add edit button for discharge date
-            dateRange = `${startDate} - <span id="discharge-date-span-${p.patient_hn}">${formatDateTH(dischargeDate)}</span> <button onclick="editDischargeDate('${p.patient_hn}')" style="font-size:10px;padding:2px 6px;margin-left:4px;">แก้ไข</button>`;
+            // Add edit button for discharge date (fix: use single quotes for onclick)
+            dateRange = `${startDate} - <span id='discharge-date-span-${p.patient_hn}'>${formatDateTH(dischargeDate)}</span> <button onclick='editDischargeDate("${p.patient_hn}")' style="font-size:10px;padding:2px 6px;margin-left:4px;">แก้ไข</button>`;
           } else if (p.current_status === 'admitted') {
             const today = new Date().toISOString().split('T')[0];
             dateRange = `${startDate} - ปัจจุบัน`;
@@ -653,49 +653,49 @@
             <td>${note}</td>
           </tr>
         `;
-          // Inline edit discharge date for discharged patients
-          window.editDischargeDate = function(patientHN) {
-            const span = document.getElementById('discharge-date-span-' + patientHN);
-            if (!span) return;
-            const currentDate = span.textContent.trim();
-            span.innerHTML = `<input type="date" id="discharge-date-input-${patientHN}" value="${convertTHtoISO(currentDate)}" style="font-size:11px;"> <button onclick=\"saveDischargeDate('${patientHN}')\" style=\"font-size:10px;padding:2px 6px;margin-left:4px;\">บันทึก</button>`;
-          };
-
-          window.saveDischargeDate = function(patientHN) {
-            const input = document.getElementById('discharge-date-input-' + patientHN);
-            if (!input) return;
-            const newDate = input.value;
-            // Update localStorage bookingData
-            let bookingData = JSON.parse(localStorage.getItem('bookingData')) || { booked: [], admitted: [], discharged: [] };
-            let updated = false;
-            ['discharged', 'admitted', 'booked'].forEach(list => {
-              if (bookingData[list]) {
-                bookingData[list].forEach(p => {
-                  if (p.patient_hn === patientHN) {
-                    p.discharge_date = newDate;
-                    updated = true;
-                  }
-                });
-              }
-            });
-            if (updated) {
-              localStorage.setItem('bookingData', JSON.stringify(bookingData));
-              // Update UI
-              document.getElementById('discharge-date-span-' + patientHN).textContent = formatDateTH(newDate);
-              alert('บันทึกวันจำหน่ายใหม่เรียบร้อยแล้ว');
-            } else {
-              alert('ไม่พบข้อมูลผู้ป่วยในระบบ');
-            }
-          };
-
-          // Helper: Convert dd/mm/yyyy (TH) to yyyy-mm-dd (ISO)
-          function convertTHtoISO(thDate) {
-            if (!thDate || thDate.indexOf('/') === -1) return '';
-            const [d, m, y] = thDate.split('/');
-            const isoYear = (parseInt(y, 10) - 543).toString();
-            return `${isoYear}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
-          }
       }).join('');
+
+// Move these functions to global scope
+window.editDischargeDate = function(patientHN) {
+  const span = document.getElementById('discharge-date-span-' + patientHN);
+  if (!span) return;
+  const currentDate = span.textContent.trim();
+  span.innerHTML = `<input type='date' id='discharge-date-input-${patientHN}' value='${convertTHtoISO(currentDate)}' style='font-size:11px;'> <button onclick='saveDischargeDate("${patientHN}")' style='font-size:10px;padding:2px 6px;margin-left:4px;'>บันทึก</button>`;
+};
+
+window.saveDischargeDate = function(patientHN) {
+  const input = document.getElementById('discharge-date-input-' + patientHN);
+  if (!input) return;
+  const newDate = input.value;
+  // Update localStorage bookingData
+  let bookingData = JSON.parse(localStorage.getItem('bookingData')) || { booked: [], admitted: [], discharged: [] };
+  let updated = false;
+  ['discharged', 'admitted', 'booked'].forEach(list => {
+    if (bookingData[list]) {
+      bookingData[list].forEach(p => {
+        if (p.patient_hn === patientHN) {
+          p.discharge_date = newDate;
+          updated = true;
+        }
+      });
+    }
+  });
+  if (updated) {
+    localStorage.setItem('bookingData', JSON.stringify(bookingData));
+    // Update UI
+    document.getElementById('discharge-date-span-' + patientHN).textContent = formatDateTH(newDate);
+    alert('บันทึกวันจำหน่ายใหม่เรียบร้อยแล้ว');
+  } else {
+    alert('ไม่พบข้อมูลผู้ป่วยในระบบ');
+  }
+};
+
+function convertTHtoISO(thDate) {
+  if (!thDate || thDate.indexOf('/') === -1) return '';
+  const [d, m, y] = thDate.split('/');
+  const isoYear = (parseInt(y, 10) - 543).toString();
+  return `${isoYear}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+}
     }
 
     function formatDateTH(dateString) {
