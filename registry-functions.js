@@ -537,11 +537,11 @@ function displayConfirmedList() {
   }
 
   container.innerHTML =
-    `<div style='display:flex;flex-direction:column;gap:32px;width:100%'>`
-    + renderGroup(standardList, 'standard')
-    + renderGroup(specialList, 'special')
-    + `</div>`
-    + `<div style='margin-top:24px;'>
+    `<div style='width:100%'>
+      <div style='margin-bottom:40px;'>${renderGroup(standardList, 'standard')}</div>
+      <div>${renderGroup(specialList, 'special')}</div>
+    </div>
+    <div style='margin-top:24px;'>
       <span style='display:inline-block;background:#fff9c4;border-radius:8px;padding:6px 16px;font-size:14px;color:#e65100;font-weight:600;margin-right:8px;'>ช่องสีเหลือง</span>
       <span style='font-size:14px;color:#333;'>หมายถึงผู้ป่วยที่ <b>เลื่อนนัด Admit</b></span>
     </div>`;
