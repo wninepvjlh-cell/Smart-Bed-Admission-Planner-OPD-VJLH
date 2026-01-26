@@ -948,7 +948,7 @@ function updateDischargeButton(dischargeDate) {
   }
   
   const today = new Date().toISOString().split('T')[0];
-  if (today === dischargeDate) {
+  if (today >= dischargeDate) {
     dischargeBtn.disabled = false;
     dischargeBtn.style.opacity = '1';
     dischargeBtn.style.cursor = 'pointer';
