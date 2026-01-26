@@ -491,29 +491,43 @@ function displayConfirmedList() {
     return;
   }
   
-  // Sort by admit date (earliest first - patients who need to be admitted soon come first)
-  confirmedList.sort((a, b) => new Date(a.admit_date) - new Date(b.admit_date));
-  
-  confirmedList.forEach((booking, index) => {
-    const card = document.createElement('div');
-    // Highlight if postponed
-    const isPostponed = booking.postponed === true;
-    card.style.cssText = (isPostponed
-      ? 'background:#fff9c4;border-radius:12px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.08);cursor:pointer;transition:all 0.2s;border:2px solid #ffe082;'
-      : 'background:white;border-radius:12px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.08);cursor:pointer;transition:all 0.2s;border:2px solid transparent;');
-    card.onmouseover = () => {
-      card.style.transform = 'translateY(-4px)';
-      card.style.boxShadow = '0 6px 20px rgba(102,187,106,0.15)';
-      card.style.borderColor = isPostponed ? '#ffe082' : '#66bb6a';
-    };
-    card.onmouseout = () => {
-      card.style.transform = 'translateY(0)';
-      card.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)';
-      card.style.borderColor = isPostponed ? '#ffe082' : 'transparent';
-    };
-    card.onclick = () => openConfirmedDetailModal(booking.patient_hn);
-    
-    card.innerHTML = `
+  // Split into standard and special
+  const standardList = confirmedList.filter(b => (b.bed_type === 'standard') || (b.assigned_bed && b.assigned_bed.startsWith('B')));
+  const specialList = confirmedList.filter(b => (b.bed_type === 'special') || (b.assigned_bed && b.assigned_bed.startsWith('V')));
+
+  // Helper to render a group
+  function renderGroup(list, title) {
+    if (list.length === 0) return '';
+    let html = `<div style='margin-bottom:24px;'><h3 style='color:#00796b;font-size:18px;font-weight:700;margin-bottom:12px;'>${title}</h3><div style='display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;'>`;
+    list.sort((a, b) => new Date(a.admit_date) - new Date(b.admit_date));
+    list.forEach((booking, index) => {
+      const isPostponed = booking.postponed === true;
+      html += `<div style='${isPostponed
+        ? 'background:#fff9c4;border-radius:12px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.08);cursor:pointer;transition:all 0.2s;border:2px solid #ffe082;'
+        : 'background:white;border-radius:12px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.08);cursor:pointer;transition:all 0.2s;border:2px solid transparent;'}'
+        onclick='openConfirmedDetailModal("${booking.patient_hn}")'>
+        <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:16px;">
+          <div style="background:linear-gradient(135deg,#66bb6a 0%,#43a047 100%);color:white;width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;box-shadow:0 2px 8px rgba(102,187,106,0.3);">✓</div>
+          <div style="text-align:right;"><div style="color:#66bb6a;font-size:12px;font-weight:500;margin-bottom:4px;">วันที่ Admit</div><div style="color:#2e7d32;font-size:14px;font-weight:600;">${formatDateTH(booking.admit_date)}</div></div>
+        </div>
+        <div style="margin-bottom:12px;display:grid;gap:4px;"><div style="color:#999;font-size:11px;font-weight:500;text-transform:uppercase;">HN</div><div style="color:#2e7d32;font-size:18px;font-weight:700;">${booking.patient_hn}</div><div style="color:#999;font-size:11px;font-weight:500;">ชื่อ-สกุล</div><div style="color:#2e7d32;font-size:15px;font-weight:600;">${booking.patient_name || '-'}</div></div>
+        <div style="height:1px;background:linear-gradient(90deg,#e0e0e0 0%,transparent 100%);margin:16px 0;"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <button onclick='event.stopPropagation();openConfirmedDetailModal("${booking.patient_hn}")' style='padding:10px;background:#f5f5f5;color:#666;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:500;transition:all 0.2s;' onmouseover='this.style.background="#e0e0e0"' onmouseout='this.style.background="#f5f5f5"'>📋 ดูข้อมูล</button>
+          ${canAdmitToday(booking.admit_date)
+            ? `<button onclick='event.stopPropagation();admitPatient("${booking.patient_hn}")' style='padding:10px;background:linear-gradient(135deg,#66bb6a 0%,#43a047 100%);color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;transition:all 0.2s;box-shadow:0 2px 4px rgba(102,187,106,0.2);' onmouseover='this.style.transform="translateY(-1px)";this.style.boxShadow="0 4px 8px rgba(102,187,106,0.3)"' onmouseout='this.style.transform="translateY(0)";this.style.boxShadow="0 2px 4px rgba(102,187,106,0.2)"'>🏥 ส่ง Admit</button>`
+            : `<button disabled style='padding:10px;background:#e0e0e0;color:#999;border:none;border-radius:6px;cursor:not-allowed;font-size:12px;font-weight:600;' title='ยังไม่ถึงวัน Admit'>🏥 ส่ง Admit</button>`}
+          <button onclick='event.stopPropagation();openCancelModal("${booking.patient_hn}")' style='grid-column:1/-1;padding:10px;background:linear-gradient(135deg,#ef5350 0%,#e53935 100%);color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;transition:all 0.2s;box-shadow:0 2px 4px rgba(239,83,80,0.2);' onmouseover='this.style.transform="translateY(-1px)";this.style.boxShadow="0 4px 8px rgba(239,83,80,0.3)"' onmouseout='this.style.transform="translateY(0)";this.style.boxShadow="0 2px 4px rgba(239,83,80,0.2)"'>❌ ยกเลิก</button>
+        </div>
+      </div>`;
+    });
+    html += '</div></div>';
+    return html;
+  }
+
+  container.innerHTML =
+    renderGroup(standardList, 'กลุ่มเตียงสามัญ') +
+    renderGroup(specialList, 'กลุ่มห้องพิเศษ');
       <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:16px;">
         <div style="background:linear-gradient(135deg,#66bb6a 0%,#43a047 100%);color:white;width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;box-shadow:0 2px 8px rgba(102,187,106,0.3);">
           ✓
