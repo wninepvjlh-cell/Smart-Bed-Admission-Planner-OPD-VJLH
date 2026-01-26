@@ -526,13 +526,13 @@ function displayConfirmedList() {
   }
 
   container.innerHTML =
-    `<div style='margin-bottom:16px;'>
-      <span style='display:inline-block;background:#fff9c4;border-radius:8px;padding:6px 16px;font-size:14px;color:#e65100;font-weight:600;margin-right:8px;'>ช่องสีเหลือง</span>
-      <span style='font-size:14px;color:#333;'>หมายถึงผู้ป่วยที่ <b>เลื่อนนัด Admit</b></span>
-    </div>` +
     renderGroup(standardList, 'กลุ่มเตียงสามัญ') +
     (standardList.length && specialList.length ? "<hr style='margin:32px 0;border:0;border-top:2px dashed #b2dfdb;'>" : "") +
-    renderGroup(specialList, 'กลุ่มห้องพิเศษ');
+    renderGroup(specialList, 'กลุ่มห้องพิเศษ') +
+    `<div style='margin-top:24px;'>
+      <span style='display:inline-block;background:#fff9c4;border-radius:8px;padding:6px 16px;font-size:14px;color:#e65100;font-weight:600;margin-right:8px;'>ช่องสีเหลือง</span>
+      <span style='font-size:14px;color:#333;'>หมายถึงผู้ป่วยที่ <b>เลื่อนนัด Admit</b></span>
+    </div>`;
 }
 
 // Show registry tab
