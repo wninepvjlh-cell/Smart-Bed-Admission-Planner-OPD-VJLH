@@ -492,8 +492,8 @@ function displayConfirmedList() {
   }
   
   // Split into standard and special
-  const standardList = confirmedList.filter(b => (b.bed_type === 'standard') || (b.assigned_bed && b.assigned_bed.startsWith('B')));
   const specialList = confirmedList.filter(b => (b.bed_type === 'special') || (b.assigned_bed && b.assigned_bed.startsWith('V')));
+  const standardList = confirmedList.filter(b => !specialList.includes(b));
 
   // Helper to render a group
   function renderGroup(list, title) {
