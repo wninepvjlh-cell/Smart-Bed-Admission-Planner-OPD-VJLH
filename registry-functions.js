@@ -532,31 +532,6 @@ function displayConfirmedList() {
     </div>` +
     renderGroup(standardList, 'กลุ่มเตียงสามัญ') +
     renderGroup(specialList, 'กลุ่มห้องพิเศษ');
-          <div style="color:#2e7d32;font-size:14px;font-weight:600;">${formatDateTH(booking.admit_date)}</div>
-        </div>
-      </div>
-      
-      <div style="margin-bottom:12px;display:grid;gap:4px;">
-        <div style="color:#999;font-size:11px;font-weight:500;text-transform:uppercase;">HN</div>
-        <div style="color:#2e7d32;font-size:18px;font-weight:700;">${booking.patient_hn}</div>
-        <div style="color:#999;font-size:11px;font-weight:500;">ชื่อ-สกุล</div>
-        <div style="color:#2e7d32;font-size:15px;font-weight:600;">${booking.patient_name || '-'}</div>
-      </div>
-      
-      <div style="height:1px;background:linear-gradient(90deg,#e0e0e0 0%,transparent 100%);margin:16px 0;"></div>
-      
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-        <button onclick="event.stopPropagation();openConfirmedDetailModal('${booking.patient_hn}')" style="padding:10px;background:#f5f5f5;color:#666;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:500;transition:all 0.2s;" onmouseover="this.style.background='#e0e0e0'" onmouseout="this.style.background='#f5f5f5'">📋 ดูข้อมูล</button>
-        ${canAdmitToday(booking.admit_date) 
-          ? `<button onclick="event.stopPropagation();admitPatient('${booking.patient_hn}')" style="padding:10px;background:linear-gradient(135deg,#66bb6a 0%,#43a047 100%);color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;transition:all 0.2s;box-shadow:0 2px 4px rgba(102,187,106,0.2);" onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 4px 8px rgba(102,187,106,0.3)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 2px 4px rgba(102,187,106,0.2)'">🏥 ส่ง Admit</button>`
-          : `<button disabled style="padding:10px;background:#e0e0e0;color:#999;border:none;border-radius:6px;cursor:not-allowed;font-size:12px;font-weight:600;" title="ยังไม่ถึงวัน Admit">🏥 ส่ง Admit</button>`
-        }
-        <button onclick="event.stopPropagation();openCancelModal('${booking.patient_hn}')" style="grid-column:1/-1;padding:10px;background:linear-gradient(135deg,#ef5350 0%,#e53935 100%);color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;transition:all 0.2s;box-shadow:0 2px 4px rgba(239,83,80,0.2);" onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 4px 8px rgba(239,83,80,0.3)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 2px 4px rgba(239,83,80,0.2)'">❌ ยกเลิก</button>
-      </div>
-    `;
-    
-    container.appendChild(card);
-  });
 }
 
 // Show registry tab
