@@ -947,8 +947,9 @@ function updateDischargeButton(dischargeDate) {
     return;
   }
   
-  const today = new Date().toISOString().split('T')[0];
-  if (today >= dischargeDate) {
+  const todayObj = new Date();
+  const dischargeObj = new Date(dischargeDate);
+  if (!isNaN(dischargeObj.getTime()) && todayObj.getTime() >= dischargeObj.getTime()) {
     dischargeBtn.disabled = false;
     dischargeBtn.style.opacity = '1';
     dischargeBtn.style.cursor = 'pointer';
