@@ -526,14 +526,12 @@ function displayConfirmedList() {
   }
 
   container.innerHTML =
+    `<div style='margin-bottom:16px;'>
+      <span style='display:inline-block;background:#fff9c4;border-radius:8px;padding:6px 16px;font-size:14px;color:#e65100;font-weight:600;margin-right:8px;'>ช่องสีเหลือง</span>
+      <span style='font-size:14px;color:#333;'>หมายถึงผู้ป่วยที่ <b>เลื่อนนัด Admit</b></span>
+    </div>` +
     renderGroup(standardList, 'กลุ่มเตียงสามัญ') +
     renderGroup(specialList, 'กลุ่มห้องพิเศษ');
-      <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:16px;">
-        <div style="background:linear-gradient(135deg,#66bb6a 0%,#43a047 100%);color:white;width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;box-shadow:0 2px 8px rgba(102,187,106,0.3);">
-          ✓
-        </div>
-        <div style="text-align:right;">
-          <div style="color:#66bb6a;font-size:12px;font-weight:500;margin-bottom:4px;">วันที่ Admit</div>
           <div style="color:#2e7d32;font-size:14px;font-weight:600;">${formatDateTH(booking.admit_date)}</div>
         </div>
       </div>
