@@ -1196,9 +1196,18 @@ function confirmRefer() {
 function dischargePatient() {
   if (!selectedPatient) return;
   const dischargeDate = document.getElementById('modal-patient-discharge-date').value;
-  // Allow discharge at any time, just require a date to be selected
   if (!dischargeDate) {
     alert('❌ กรุณาระบุวันที่จำหน่าย');
+    return;
+  }
+  // Only allow discharge if today >= dischargeDate
+  const todayObj = new Date();
+  const dischargeObj = new Date(dischargeDate);
+  // Set time to midnight for both dates for accurate comparison
+  todayObj.setHours(0,0,0,0);
+  dischargeObj.setHours(0,0,0,0);
+  if (todayObj.getTime() < dischargeObj.getTime()) {
+    alert('❌ ยังไม่ถึงวันที่จำหน่ายที่เลือกไว้\nวันที่จำหน่าย: ' + dischargeDate);
     return;
   }
   if (!confirm('ยืนยันการจำหน่ายผู้ป่วย ' + selectedPatient.patient_name + '?')) {
