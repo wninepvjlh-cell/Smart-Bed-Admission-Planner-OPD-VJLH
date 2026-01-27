@@ -419,15 +419,17 @@ function openBookingDetailModal(hn) {
       // ถ้าไม่เจอใน booked ให้หาใน confirmed ที่ postponed
       patient = (bookingData.confirmed || []).find(p => p.patient_hn === hn && p.postponed === true);
     }
-  }
-  if (!patient) {
-    alert('ไม่พบข้อมูลผู้ป่วย');
-    return;
+    if (!patient) {
+      alert('ไม่พบข้อมูลผู้ป่วย');
+      return;
+    }
+    currentDetailPatient = hn;
+  } else {
+    // If patient object is provided, set currentDetailPatient from it
+    currentDetailPatient = patient.patient_hn;
   }
   
   console.log('Patient data:', patient); // Debug log
-  
-  currentDetailPatient = hn;
   
   // Section 1: Patient Info
   document.getElementById('detail-hn').textContent = patient.patient_hn || '-';
