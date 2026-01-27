@@ -454,6 +454,13 @@ function openBookingDetailModal(hn) {
   document.getElementById('booking-detail-modal').style.display = 'flex';
 }
 
+// เปิด modal เลื่อนนัดจาก Booking Detail
+function openPostponeModalFromDetail() {
+  if (currentDetailPatient) {
+    openPostponeModal(currentDetailPatient);
+  }
+}
+
 // Close booking detail modal
 function closeBookingDetailModal() {
   document.getElementById('booking-detail-modal').style.display = 'none';
