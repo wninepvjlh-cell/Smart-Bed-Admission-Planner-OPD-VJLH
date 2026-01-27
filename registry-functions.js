@@ -357,11 +357,13 @@ function showDayBookingsModal(day, bookings) {
   `;
   
   bookings.forEach((booking, index) => {
+    // ส่ง patient object ทั้งตัวไปที่ openBookingDetailModal (serialize เป็น base64)
+    const patientData = btoa(unescape(encodeURIComponent(JSON.stringify(booking))));
     modalHTML += `
       <div style="background:linear-gradient(135deg,#e0f7fa 0%,#e1f5fe 100%);padding:14px;border-radius:10px;margin-bottom:12px;border-left:4px solid #00acc1;cursor:pointer;transition:all 0.2s;" 
            onmouseover="this.style.transform='translateX(4px)';this.style.boxShadow='0 2px 8px rgba(0,172,193,0.2)'" 
            onmouseout="this.style.transform='translateX(0)';this.style.boxShadow='none'"
-           onclick="closeDayBookingsModal();openBookingDetailModal('${booking.patient_hn}')">
+           onclick="closeDayBookingsModal();openBookingDetailModal(null, '${patientData}')">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
           <div style="display:flex;align-items:center;gap:12px;">
             <div style="background:linear-gradient(135deg,#00acc1 0%,#26c6da 100%);color:white;width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;">${index + 1}</div>
@@ -373,7 +375,7 @@ function showDayBookingsModal(day, bookings) {
           <div style="color:#00acc1;font-size:12px;">คลิกดูรายละเอียด →</div>
         </div>
         <div style="color:#004d40;font-size:14px;font-weight:600;margin-bottom:4px;">${booking.is_postponed ? '🔄 ' : ''}${booking.patient_name}</div>
-        ${booking.is_postponed ? `<div style="color:#fb8c00;font-size:11px;margin-bottom:4px;font-style:italic;">เลื่อนวัน: ${booking.postpone_reason}</div>` : ''}
+        ${booking.is_postponed ? `<div style=\"color:#fb8c00;font-size:11px;margin-bottom:4px;font-style:italic;\">เลื่อนวัน: ${booking.postpone_reason}</div>` : ''}
         <div style="color:#666;font-size:12px;">เตียง: ${booking.assigned_bed || '-'}</div>
       </div>
     `;
@@ -401,12 +403,20 @@ function closeDayBookingsModal() {
 
 // Open booking detail modal
 function openBookingDetailModal(hn) {
-  const bookingData = loadBookingData();
-  // แก้ไข: ให้ค้นหาผู้ป่วย postponed จากทั้ง booked และ confirmed
-  let patient = bookingData.booked.find(p => p.patient_hn === hn);
+  let patient = null;
+  // รองรับการส่ง patient object base64 มาด้วย (จาก modal รายวัน)
+  if (arguments.length > 1 && arguments[1]) {
+    try {
+      patient = JSON.parse(decodeURIComponent(escape(atob(arguments[1]))));
+    } catch (e) { patient = null; }
+  }
   if (!patient) {
-    // ถ้าไม่เจอใน booked ให้หาใน confirmed ที่ postponed
-    patient = (bookingData.confirmed || []).find(p => p.patient_hn === hn && p.postponed === true);
+    const bookingData = loadBookingData();
+    patient = bookingData.booked.find(p => p.patient_hn === hn);
+    if (!patient) {
+      // ถ้าไม่เจอใน booked ให้หาใน confirmed ที่ postponed
+      patient = (bookingData.confirmed || []).find(p => p.patient_hn === hn && p.postponed === true);
+    }
   }
   if (!patient) {
     alert('ไม่พบข้อมูลผู้ป่วย');
