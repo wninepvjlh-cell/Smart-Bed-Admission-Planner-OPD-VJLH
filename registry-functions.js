@@ -499,10 +499,24 @@ function displayConfirmedList() {
     if (list.length === 0) return '';
     let icon = '', title = '';
     if (groupType === 'standard') {
-      icon = `<span style="font-size:28px;margin-right:10px;vertical-align:middle;">🛏️</span>`;
+      icon = `<span style="display:inline-block;width:32px;height:32px;margin-right:10px;vertical-align:middle;">
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none" stroke="#19724d" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="4" y="16" width="24" height="8" rx="3"/>
+          <rect x="7" y="12" width="7" height="4" rx="2"/>
+          <rect x="18" y="12" width="7" height="4" rx="2"/>
+          <line x1="4" y1="24" x2="4" y2="28"/>
+          <line x1="28" y1="24" x2="28" y2="28"/>
+        </svg>
+      </span>`;
       title = 'กลุ่มเตียงสามัญ';
     } else if (groupType === 'special') {
-      icon = `<span style="font-size:28px;margin-right:10px;vertical-align:middle;">🏩</span>`;
+      icon = `<span style="display:inline-block;width:32px;height:32px;margin-right:10px;vertical-align:middle;">
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none" stroke="#c2185b" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="6" y="14" width="20" height="10" rx="5"/>
+          <ellipse cx="16" cy="14" rx="10" ry="5"/>
+          <path d="M11 14c0-2.5 2-4.5 5-4.5s5 2 5 4.5"/>
+        </svg>
+      </span>`;
       title = 'กลุ่มห้องพิเศษ';
     }
     let html = `<div style='margin-bottom:40px;'><h3 style='color:#19724d;font-size:22px;font-weight:700;margin-bottom:18px;display:flex;align-items:center;'>${icon}${title}</h3>`;
