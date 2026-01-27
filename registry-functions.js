@@ -1047,25 +1047,25 @@ function confirmCancelBooking() {
 let currentPostponePatient = null;
 
 function openPostponeModal() {
-  if (!currentConfirmedPatient) {
-    alert('ไม่พบข้อมูลผู้ป่วย');
-    return;
-  }
-  
+  // รองรับการส่ง hn มาด้วย (เช่น openPostponeModal(hn))
+  let hn = arguments.length > 0 ? arguments[0] : null;
+  let patient = null;
   const bookingData = loadBookingData();
-  const patient = bookingData.confirmed.find(p => p.patient_hn === currentConfirmedPatient);
-  
+  if (hn) {
+    // หาใน booked ก่อน แล้วค่อยหาใน confirmed
+    patient = (bookingData.booked || []).find(p => p.patient_hn === hn) || (bookingData.confirmed || []).find(p => p.patient_hn === hn);
+  } else if (currentConfirmedPatient) {
+    patient = (bookingData.confirmed || []).find(p => p.patient_hn === currentConfirmedPatient);
+  }
   if (!patient) {
     alert('ไม่พบข้อมูลผู้ป่วย');
     return;
   }
-  
   currentPostponePatient = patient;
   document.getElementById('postpone-patient-name').textContent = patient.patient_name;
   document.getElementById('postpone-patient-hn').textContent = patient.patient_hn;
   document.getElementById('postpone-new-date').value = '';
   document.getElementById('postpone-reason').value = '';
-  
   document.getElementById('postpone-modal').style.display = 'flex';
 }
 
