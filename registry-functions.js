@@ -402,8 +402,12 @@ function closeDayBookingsModal() {
 // Open booking detail modal
 function openBookingDetailModal(hn) {
   const bookingData = loadBookingData();
-  const patient = bookingData.booked.find(p => p.patient_hn === hn);
-  
+  // แก้ไข: ให้ค้นหาผู้ป่วย postponed จากทั้ง booked และ confirmed
+  let patient = bookingData.booked.find(p => p.patient_hn === hn);
+  if (!patient) {
+    // ถ้าไม่เจอใน booked ให้หาใน confirmed ที่ postponed
+    patient = (bookingData.confirmed || []).find(p => p.patient_hn === hn && p.postponed === true);
+  }
   if (!patient) {
     alert('ไม่พบข้อมูลผู้ป่วย');
     return;
