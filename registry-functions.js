@@ -505,29 +505,23 @@ function displayConfirmedList() {
       icon = `<span style="font-size:28px;margin-right:10px;vertical-align:middle;">🏩</span>`;
       title = 'กลุ่มห้องพิเศษ';
     }
-    // Check if there are postponed patients in this group
-    const hasPostponed = list.some(b => b.postponed === true);
-    let html = `<div style='margin-bottom:40px;'><h3 style='color:#00796b;font-size:20px;font-weight:700;margin-bottom:18px;display:flex;align-items:center;'>${icon}${title}</h3>`;
-    if (hasPostponed) {
-      html += `<div style='margin-bottom:16px;'><span style='display:inline-block;background:#fff9c4;border-radius:8px;padding:6px 16px;font-size:14px;color:#e65100;font-weight:600;margin-right:8px;'>ช่องสีเหลือง</span><span style='font-size:14px;color:#333;'>หมายถึงผู้ป่วยที่ <b>เลื่อนนัด Admit</b></span></div>`;
-    }
-    html += `<div style='display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:20px;'>`;
+    let html = `<div style='margin-bottom:40px;'><h3 style='color:#19724d;font-size:22px;font-weight:700;margin-bottom:18px;display:flex;align-items:center;'>${icon}${title}</h3>`;
+    html += `<div style='display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:28px;'>`;
     list.sort((a, b) => new Date(a.admit_date) - new Date(b.admit_date));
     list.forEach((booking, index) => {
-      const isPostponed = booking.postponed === true;
-      html += `<div style='background:${isPostponed ? '#fff9c4' : '#fff'};border-radius:18px;box-shadow:0 2px 8px rgba(0,0,0,0.10);padding:20px;display:flex;flex-direction:column;justify-content:space-between;min-height:260px;position:relative;border:2px solid ${isPostponed ? '#ffe082' : 'transparent'};'>
+      html += `<div style='background:#fff;border-radius:22px;box-shadow:0 4px 18px rgba(0,0,0,0.10);padding:28px 24px 20px 24px;display:flex;flex-direction:column;justify-content:space-between;min-height:260px;position:relative;border:0;'>
         <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:12px;">
-          <div style="background:linear-gradient(135deg,#66bb6a 0%,#43a047 100%);color:white;width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;box-shadow:0 2px 8px rgba(102,187,106,0.3);">✓</div>
-          <div style="text-align:right;"><div style="color:#66bb6a;font-size:12px;font-weight:500;margin-bottom:4px;">วันที่ Admit</div><div style="color:#2e7d32;font-size:14px;font-weight:600;">${formatDateTH(booking.admit_date)}</div></div>
+          <div style="background:#43a047;color:white;width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;box-shadow:0 2px 8px rgba(102,187,106,0.18);">✓</div>
+          <div style="text-align:right;"><div style="color:#19724d;font-size:15px;font-weight:600;margin-bottom:4px;">วันที่ Admit</div><div style="color:#2e7d32;font-size:18px;font-weight:700;">${formatDateTH(booking.admit_date)}</div></div>
         </div>
-        <div style="margin-bottom:8px;display:grid;gap:2px;"><div style="color:#999;font-size:11px;font-weight:500;text-transform:uppercase;">HN</div><div style="color:#2e7d32;font-size:18px;font-weight:700;">${booking.patient_hn}</div><div style="color:#999;font-size:11px;font-weight:500;">ชื่อ-สกุล</div><div style="color:#2e7d32;font-size:15px;font-weight:600;">${booking.patient_name || '-'}</div></div>
-        <div style="height:1px;background:linear-gradient(90deg,#e0e0e0 0%,transparent 100%);margin:8px 0;"></div>
-        <div style="display:flex;gap:8px;justify-content:stretch;margin-top:auto;">
-          <button onclick='event.stopPropagation();openConfirmedDetailModal("${booking.patient_hn}")' style='flex:1;padding:10px 0;background:#f5f5f5;color:#666;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:500;transition:all 0.2s;' onmouseover='this.style.background="#e0e0e0"' onmouseout='this.style.background="#f5f5f5"'>📋 ดูข้อมูล</button>
+        <div style="margin-bottom:8px;display:grid;gap:2px;"><div style="color:#999;font-size:13px;font-weight:600;text-transform:uppercase;">HN</div><div style="color:#19724d;font-size:20px;font-weight:700;">${booking.patient_hn}</div><div style="color:#999;font-size:13px;font-weight:600;">ชื่อ-สกุล</div><div style="color:#19724d;font-size:17px;font-weight:600;">${booking.patient_name || '-'}</div></div>
+        <div style="height:1px;background:linear-gradient(90deg,#e0e0e0 0%,transparent 100%);margin:10px 0 18px 0;"></div>
+        <div style="display:flex;gap:12px;justify-content:stretch;margin-top:auto;">
+          <button onclick='event.stopPropagation();openConfirmedDetailModal("${booking.patient_hn}")' style='flex:1;padding:12px 0;background:#f5f5f5;color:#444;border:none;border-radius:10px;cursor:pointer;font-size:15px;font-weight:600;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:6px;' onmouseover='this.style.background="#e0e0e0"' onmouseout='this.style.background="#f5f5f5"'><span style="font-size:18px;">📋</span>ดูข้อมูล</button>
           ${canAdmitToday(booking.admit_date)
-            ? `<button onclick='event.stopPropagation();admitPatient("${booking.patient_hn}")' style='flex:1;padding:10px 0;background:linear-gradient(135deg,#66bb6a 0%,#43a047 100%);color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;transition:all 0.2s;box-shadow:0 2px 4px rgba(102,187,106,0.2);' onmouseover='this.style.transform="translateY(-1px)";this.style.boxShadow="0 4px 8px rgba(102,187,106,0.3)"' onmouseout='this.style.transform="translateY(0)";this.style.boxShadow="0 2px 4px rgba(102,187,106,0.2)"'>🏥 ส่ง Admit</button>`
-            : `<button disabled style='flex:1;padding:10px 0;background:#e0e0e0;color:#999;border:none;border-radius:8px;cursor:not-allowed;font-size:14px;font-weight:600;' title='ยังไม่ถึงวัน Admit'>🏥 ส่ง Admit</button>`}
-          <button onclick='event.stopPropagation();openCancelModal("${booking.patient_hn}")' style='flex:1;padding:10px 0;background:linear-gradient(135deg,#ef5350 0%,#e53935 100%);color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;transition:all 0.2s;box-shadow:0 2px 4px rgba(239,83,80,0.2);' onmouseover='this.style.transform="translateY(-1px)";this.style.boxShadow="0 4px 8px rgba(239,83,80,0.3)"' onmouseout='this.style.transform="translateY(0)";this.style.boxShadow="0 2px 4px rgba(239,83,80,0.2)"'>❌ ยกเลิก</button>
+            ? `<button onclick='event.stopPropagation();admitPatient("${booking.patient_hn}")' style='flex:1;padding:12px 0;background:#43a047;color:white;border:none;border-radius:10px;cursor:pointer;font-size:15px;font-weight:700;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:6px;' onmouseover='this.style.background="#388e3c"'><span style="font-size:18px;">🗓️</span>ส่ง Admit</button>`
+            : `<button disabled style='flex:1;padding:12px 0;background:#e0e0e0;color:#999;border:none;border-radius:10px;cursor:not-allowed;font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px;' title='ยังไม่ถึงวัน Admit'><span style="font-size:18px;">🗓️</span>ส่ง Admit</button>`}
+          <button onclick='event.stopPropagation();openCancelModal("${booking.patient_hn}")' style='flex:1;padding:12px 0;background:#ef5350;color:white;border:none;border-radius:10px;cursor:pointer;font-size:15px;font-weight:700;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:6px;' onmouseover='this.style.background="#d32f2f"'><span style="font-size:18px;">❌</span>ยกเลิก</button>
         </div>
       </div>`;
     });
