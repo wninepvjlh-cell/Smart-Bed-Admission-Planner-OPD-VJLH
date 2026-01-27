@@ -523,7 +523,8 @@ function displayConfirmedList() {
     html += `<div style='display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:28px;'>`;
     list.sort((a, b) => new Date(a.admit_date) - new Date(b.admit_date));
     list.forEach((booking, index) => {
-      html += `<div style='background:#fff;border-radius:22px;box-shadow:0 4px 18px rgba(0,0,0,0.10);padding:28px 24px 20px 24px;display:flex;flex-direction:column;justify-content:space-between;min-height:260px;position:relative;border:0;'>
+      const isPostponed = booking.postponed === true;
+      html += `<div style='background:${isPostponed ? '#FFFBEA' : '#fff'};border-radius:22px;box-shadow:0 4px 18px rgba(0,0,0,0.10);padding:28px 24px 20px 24px;display:flex;flex-direction:column;justify-content:space-between;min-height:260px;position:relative;border:0;'>
         <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:12px;">
           <div style="background:#43a047;color:white;width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;box-shadow:0 2px 8px rgba(102,187,106,0.18);">✓</div>
           <div style="text-align:right;"><div style="color:#19724d;font-size:15px;font-weight:600;margin-bottom:4px;">วันที่ Admit</div><div style="color:#2e7d32;font-size:18px;font-weight:700;">${formatDateTH(booking.admit_date)}</div></div>
