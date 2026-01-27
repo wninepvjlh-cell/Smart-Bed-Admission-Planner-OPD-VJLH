@@ -219,6 +219,8 @@ function changeMonth(offset) {
 function renderCalendar() {
   const bookingData = loadBookingData();
   const bookedList = bookingData.booked || [];
+  const postponedList = (bookingData.confirmed || []).filter(b => b.postponed === true);
+  const allForCalendar = [...bookedList, ...postponedList];
   const emptyState = document.getElementById('booking-empty-state');
   
   // Update month/year display
@@ -229,9 +231,9 @@ function renderCalendar() {
   const firstDay = new Date(currentYear, currentMonth, 1).getDay();
   const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
   
-  // Group bookings by date
+  // Group bookings by date (รวม postponed)
   const bookingsByDate = {};
-  bookedList.forEach(booking => {
+  allForCalendar.forEach(booking => {
     const admitDate = new Date(booking.admit_date);
     if (admitDate.getMonth() === currentMonth && admitDate.getFullYear() === currentYear) {
       const day = admitDate.getDate();
@@ -289,8 +291,8 @@ function renderCalendar() {
       const displayCount = Math.min(2, bookingCount);
       for (let i = 0; i < displayCount; i++) {
         const booking = bookingsByDate[day][i];
-        const postponeIcon = booking.is_postponed ? '🔄 ' : '';
-        calendarHTML += `<div style="font-size:10px;color:#666;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${booking.is_postponed ? 'เลื่อนวัน: ' + booking.postpone_reason + ' - ' : ''}${booking.patient_name}">${postponeIcon}• ${booking.patient_name}</div>`;
+        const postponeIcon = booking.postponed ? '🔄 ' : '';
+        calendarHTML += `<div style="font-size:10px;color:${booking.postponed ? '#e65100' : '#666'};margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${booking.postponed ? 'เลื่อนวัน: ' + booking.postpone_reason + ' - ' : ''}${booking.patient_name}">${postponeIcon}• ${booking.patient_name}</div>`;
       }
       
       if (bookingCount > 2) {
@@ -314,9 +316,11 @@ function renderCalendar() {
 function showDayBookings(day) {
   const bookingData = loadBookingData();
   const bookedList = bookingData.booked || [];
+  const postponedList = (bookingData.confirmed || []).filter(b => b.postponed === true);
+  const allForCalendar = [...bookedList, ...postponedList];
   
   // Filter bookings for this day
-  const dayBookings = bookedList.filter(booking => {
+  const dayBookings = allForCalendar.filter(booking => {
     const admitDate = new Date(booking.admit_date);
     return admitDate.getDate() === day && 
            admitDate.getMonth() === currentMonth && 
