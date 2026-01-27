@@ -181,22 +181,21 @@
 
         <div style="width:100%;max-width:1100px;min-width:320px;margin:0 auto;box-sizing:border-box;display:flex;flex-direction:row;gap:24px;justify-content:center;align-items:stretch;">
 
-                  <!-- รายการผู้ป่วยนัด admit วันนี้ (ย้ายมาตรงนี้) -->
-                  <section style="background:#fff;border-radius:20px;box-shadow:0 4px 16px rgba(0,0,0,0.06);padding:24px;">
+                  <!-- Booking Confirmed (Dashboard) -->
+                  <section style="background:#fff;border-radius:20px;box-shadow:0 4px 16px rgba(0,0,0,0.06);padding:24px;min-width:350px;flex:1;">
                     <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
                       <h3 style="margin:0;font-size:1.2rem;color:#006064;font-weight:700;">
-                        <span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:rgba(0,150,136,0.1);">
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#009688" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                        <span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:rgba(46,125,50,0.1);">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#388e3c" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
                             <rect x="4" y="9" width="16" height="9" rx="2" ry="2"/>
                             <path d="M8 9V7a4 4 0 0 1 8 0v2"/>
                           </svg>
                         </span>
-                        รายการผู้ป่วยนัด admit วันนี้
+                        Booking Confirmed
                       </h3>
                     </div>
-                    <div id="today-admit-list">
-                      <!-- รายการผู้ป่วยจะแสดงตรงนี้ -->
-                      <p style="color:#888;">ไม่มีข้อมูลผู้ป่วยนัด admit วันนี้</p>
+                    <div id="dashboard-confirmed-list">
+                      <!-- Confirmed patient cards will be rendered here -->
                     </div>
                   </section>
           <section style="background:#fff;border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,0.06);padding:20px 24px 32px 24px;width:50%;min-width:220px;max-width:550px;min-height:420px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:stretch;align-items:stretch;">
@@ -503,6 +502,82 @@
   </script>
 
   <script src="dashboard-functions.js"></script>
+  <script>
+    // Render Booking Confirmed cards in Dashboard
+    function renderDashboardConfirmedList() {
+      const bookingData = (typeof loadBookingData === 'function') ? loadBookingData() : JSON.parse(localStorage.getItem('bookingData')||'{"confirmed":[]}');
+      const confirmedList = (bookingData.confirmed || []).filter(b => (b.call_result === 'confirmed' || b.called === true) && !b.postponed);
+      const container = document.getElementById('dashboard-confirmed-list');
+      if (!container) return;
+      container.innerHTML = '';
+      if (confirmedList.length === 0) {
+        container.innerHTML = '<div style="padding:40px;text-align:center;color:#999;background:white;border-radius:12px;"><div style="font-size:40px;margin-bottom:12px;opacity:0.5;">✅</div><div style="font-size:16px;">ยังไม่มีรายการยืนยัน</div></div>';
+        return;
+      }
+      // Split into standard and special
+      const specialList = confirmedList.filter(b => (b.bed_type === 'special') || (b.assigned_bed && b.assigned_bed.startsWith('V')));
+      const standardList = confirmedList.filter(b => !specialList.includes(b));
+      function renderGroup(list, groupType) {
+        if (list.length === 0) return '';
+        let icon = '', title = '';
+        if (groupType === 'standard') {
+          icon = `<span style="display:inline-block;width:28px;height:28px;margin-right:8px;vertical-align:middle;"><svg width="28" height="28" viewBox="0 0 32 32" fill="none" stroke="#19724d" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="16" width="24" height="8" rx="3"/><rect x="7" y="12" width="7" height="4" rx="2"/><rect x="18" y="12" width="7" height="4" rx="2"/><line x1="4" y1="24" x2="4" y2="28"/><line x1="28" y1="24" x2="28" y2="28"/></svg></span>`;
+          title = 'กลุ่มเตียงสามัญ';
+        } else if (groupType === 'special') {
+          icon = `<span style="display:inline-block;width:28px;height:28px;margin-right:8px;vertical-align:middle;"><svg width="28" height="28" viewBox="0 0 32 32" fill="none" stroke="#c2185b" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="14" width="20" height="10" rx="5"/><ellipse cx="16" cy="14" rx="10" ry="5"/><path d="M11 14c0-2.5 2-4.5 5-4.5s5 2 5 4.5"/></svg></span>`;
+          title = 'กลุ่มห้องพิเศษ';
+        }
+        let html = `<div style='margin-bottom:32px;'><h4 style='color:#19724d;font-size:18px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;'>${icon}${title}</h4>`;
+        html += `<div style='display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px;'>`;
+        list.sort((a, b) => new Date(a.admit_date) - new Date(b.admit_date));
+        list.forEach((booking, index) => {
+          html += `<div style='background:#fff;border-radius:18px;box-shadow:0 4px 14px rgba(0,0,0,0.09);padding:20px 16px 16px 16px;display:flex;flex-direction:column;justify-content:space-between;min-height:180px;position:relative;border:0;'>
+            <div style=\"display:flex;justify-content:space-between;align-items:start;margin-bottom:8px;\">
+              <div style=\"background:#43a047;color:white;width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;box-shadow:0 2px 8px rgba(102,187,106,0.18);\">✓</div>
+              <div style=\"text-align:right;\"><div style=\"color:#19724d;font-size:13px;font-weight:600;margin-bottom:2px;\">วันที่ Admit</div><div style=\"color:#2e7d32;font-size:15px;font-weight:700;\">${formatDateTH(booking.admit_date)}</div></div>
+            </div>
+            <div style=\"margin-bottom:6px;display:grid;gap:2px;\"><div style=\"color:#999;font-size:11px;font-weight:600;text-transform:uppercase;\">HN</div><div style=\"color:#19724d;font-size:16px;font-weight:700;\">${booking.patient_hn}</div><div style=\"color:#999;font-size:11px;font-weight:600;\">ชื่อ-สกุล</div><div style=\"color:#19724d;font-size:14px;font-weight:600;\">${booking.patient_name || '-'}</div></div>
+            <div style=\"height:1px;background:linear-gradient(90deg,#e0e0e0 0%,transparent 100%);margin:8px 0 12px 0;\"></div>
+            <div style=\"display:flex;gap:8px;justify-content:stretch;margin-top:auto;\">
+              <button onclick='event.stopPropagation();openConfirmedDetailModal("${booking.patient_hn}")' style='flex:1;padding:10px 0;background:#f5f5f5;color:#444;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:6px;' onmouseover='this.style.background="#e0e0e0"' onmouseout='this.style.background="#f5f5f5"'><span style="font-size:16px;">📋</span>ดูข้อมูล</button>
+              ${canAdmitToday(booking.admit_date)
+                ? `<button onclick='event.stopPropagation();admitPatient("${booking.patient_hn}")' style='flex:1;padding:10px 0;background:#43a047;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:6px;' onmouseover='this.style.background="#388e3c"'><span style="font-size:16px;">🗓️</span>ส่ง Admit</button>`
+                : `<button disabled style='flex:1;padding:10px 0;background:#e0e0e0;color:#999;border:none;border-radius:8px;cursor:not-allowed;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px;' title='ยังไม่ถึงวัน Admit'><span style="font-size:16px;">🗓️</span>ส่ง Admit</button>`}
+              <button onclick='event.stopPropagation();openCancelModal("${booking.patient_hn}")' style='flex:1;padding:10px 0;background:#ef5350;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:6px;' onmouseover='this.style.background="#d32f2f"'><span style="font-size:16px;">❌</span>ยกเลิก</button>
+            </div>
+          </div>`;
+        });
+        html += `</div></div>`;
+        return html;
+      }
+      container.innerHTML = renderGroup(standardList, 'standard') + renderGroup(specialList, 'special');
+    }
+    // Helper: format date TH
+    function formatDateTH(dateStr) {
+      if (!dateStr) return '-';
+      const d = new Date(dateStr);
+      if (isNaN(d)) return '-';
+      const thMonths = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+      return `${d.getDate()} ${thMonths[d.getMonth()]} ${d.getFullYear()+543}`;
+    }
+    // Helper: can admit today
+    function canAdmitToday(admitDate) {
+      if (!admitDate) return false;
+      const today = new Date();
+      const d = new Date(admitDate);
+      return d.getFullYear() === today.getFullYear() && d.getMonth() === today.getMonth() && d.getDate() === today.getDate();
+    }
+    // Dummy handlers for modal actions (should be implemented or imported)
+    window.openConfirmedDetailModal = window.openConfirmedDetailModal || function(hn) { alert('ดูข้อมูลผู้ป่วย HN: '+hn); };
+    window.admitPatient = window.admitPatient || function(hn) { alert('ส่ง Admit HN: '+hn); };
+    window.openCancelModal = window.openCancelModal || function(hn) { alert('ยกเลิก HN: '+hn); };
+    // Render on load
+    renderDashboardConfirmedList();
+    // Re-render on storage change
+    window.addEventListener('storage', function(e) {
+      if (!e.key || e.key === 'bookingData') renderDashboardConfirmedList();
+    });
+  </script>
 
   <script src="dashboard-charts.js"></script>
 </body>
