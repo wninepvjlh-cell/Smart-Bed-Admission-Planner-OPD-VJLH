@@ -359,8 +359,10 @@ function showDayBookingsModal(day, bookings) {
   bookings.forEach((booking, index) => {
     // ส่ง patient object ทั้งตัวไปที่ openBookingDetailModal (serialize เป็น base64)
     const patientData = btoa(unescape(encodeURIComponent(JSON.stringify(booking))));
+    const cardBg = booking.postponed ? '#FFFBEA' : 'linear-gradient(135deg,#e0f7fa 0%,#e1f5fe 100%)';
+    const borderColor = booking.postponed ? '#ffe082' : '#00acc1';
     modalHTML += `
-      <div style="background:linear-gradient(135deg,#e0f7fa 0%,#e1f5fe 100%);padding:14px;border-radius:10px;margin-bottom:12px;border-left:4px solid #00acc1;cursor:pointer;transition:all 0.2s;" 
+      <div style="background:${cardBg};padding:14px;border-radius:10px;margin-bottom:12px;border-left:4px solid ${borderColor};cursor:pointer;transition:all 0.2s;" 
            onmouseover="this.style.transform='translateX(4px)';this.style.boxShadow='0 2px 8px rgba(0,172,193,0.2)'" 
            onmouseout="this.style.transform='translateX(0)';this.style.boxShadow='none'"
            onclick="closeDayBookingsModal();openBookingDetailModal(null, '${patientData}')">
