@@ -1106,16 +1106,16 @@ function confirmPostponeBooking() {
 
   const bookingData = JSON.parse(localStorage.getItem('bookingData')) || { booked: [], confirmed: [], admitted: [], cancelled: [] };
   let patient = null;
-  // Try to find in confirmed first
-  let confirmedIndex = bookingData.confirmed.findIndex(p => p.patient_hn === currentPostponePatient.patient_hn);
+  const hn = (currentPostponePatient.patient_hn || '').toString().trim();
+  // Remove from confirmed (robust string match)
+  let confirmedIndex = bookingData.confirmed.findIndex(p => (p.patient_hn || '').toString().trim() === hn);
   if (confirmedIndex !== -1) {
     patient = bookingData.confirmed.splice(confirmedIndex, 1)[0];
-  } else {
-    // Try to find in booked
-    let bookedIndex = bookingData.booked.findIndex(p => p.patient_hn === currentPostponePatient.patient_hn);
-    if (bookedIndex !== -1) {
-      patient = bookingData.booked.splice(bookedIndex, 1)[0];
-    }
+  }
+  // Remove from booked (robust string match)
+  let bookedIndex = bookingData.booked.findIndex(p => (p.patient_hn || '').toString().trim() === hn);
+  if (bookedIndex !== -1) {
+    patient = bookingData.booked.splice(bookedIndex, 1)[0];
   }
   if (!patient) {
     alert('ไม่พบข้อมูลผู้ป่วย');
@@ -1133,8 +1133,10 @@ function confirmPostponeBooking() {
   patient.postponed = true; // Set flag for postponed status
   patient.postponed_by = loggedUser;
 
-  // Always move to confirmed list
-  bookingData.confirmed.push(patient);
+  // Always move to confirmed list (prevent duplicates)
+  if (!bookingData.confirmed.some(p => (p.patient_hn || '').toString().trim() === hn)) {
+    bookingData.confirmed.push(patient);
+  }
 
   localStorage.setItem('bookingData', JSON.stringify(bookingData));
 
