@@ -532,19 +532,25 @@
         html += `<div style='display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px;'>`;
         list.sort((a, b) => new Date(a.admit_date) - new Date(b.admit_date));
         list.forEach((booking, index) => {
-          html += `<div style='background:#fff;border-radius:18px;box-shadow:0 4px 14px rgba(0,0,0,0.09);padding:20px 16px 16px 16px;display:flex;flex-direction:column;justify-content:space-between;min-height:180px;position:relative;border:0;'>
+          // Highlight if admit_date is today
+          const isAdmitToday = canAdmitToday(booking.admit_date);
+          const cardBg = isAdmitToday ? "background:#d6f5e7;" : "background:#fff;";
+          html += `<div style='${cardBg}border-radius:18px;box-shadow:0 4px 14px rgba(0,0,0,0.09);padding:20px 16px 16px 16px;display:flex;flex-direction:column;justify-content:space-between;min-height:200px;position:relative;border:0;'>
             <div style=\"display:flex;justify-content:space-between;align-items:start;margin-bottom:8px;\">
               <div style=\"background:#43a047;color:white;width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;box-shadow:0 2px 8px rgba(102,187,106,0.18);\">✓</div>
               <div style=\"text-align:right;\"><div style=\"color:#19724d;font-size:13px;font-weight:600;margin-bottom:2px;\">วันที่ Admit</div><div style=\"color:#2e7d32;font-size:15px;font-weight:700;\">${formatDateTH(booking.admit_date)}</div></div>
             </div>
-            <div style=\"margin-bottom:6px;display:grid;gap:2px;\"><div style=\"color:#999;font-size:11px;font-weight:600;text-transform:uppercase;\">HN</div><div style=\"color:#19724d;font-size:16px;font-weight:700;\">${booking.patient_hn}</div><div style=\"color:#999;font-size:11px;font-weight:600;\">ชื่อ-สกุล</div><div style=\"color:#19724d;font-size:14px;font-weight:600;\">${booking.patient_name || '-'}</div></div>
+            <div style=\"margin-bottom:6px;display:grid;gap:2px;\">
+              <div style=\"color:#999;font-size:11px;font-weight:600;text-transform:uppercase;\">HN</div>
+              <div style=\"color:#19724d;font-size:16px;font-weight:700;\">${booking.patient_hn}</div>
+              <div style=\"color:#999;font-size:11px;font-weight:600;\">ชื่อ-สกุล</div>
+              <div style=\"color:#19724d;font-size:14px;font-weight:600;\">${booking.patient_name || '-'}<\/div>
+              <div style=\"color:#999;font-size:11px;font-weight:600;margin-top:4px;\">Diagnosis</div>
+              <div style=\"color:#c62828;font-size:13px;font-weight:600;\">${booking.diagnosis || '-'}</div>
+            </div>
             <div style=\"height:1px;background:linear-gradient(90deg,#e0e0e0 0%,transparent 100%);margin:8px 0 12px 0;\"></div>
             <div style=\"display:flex;gap:8px;justify-content:stretch;margin-top:auto;\">
               <button onclick='event.stopPropagation();openConfirmedDetailModal("${booking.patient_hn}")' style='flex:1;padding:10px 0;background:#f5f5f5;color:#444;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:6px;' onmouseover='this.style.background="#e0e0e0"' onmouseout='this.style.background="#f5f5f5"'><span style="font-size:16px;">📋</span>ดูข้อมูล</button>
-              ${canAdmitToday(booking.admit_date)
-                ? `<button onclick='event.stopPropagation();admitPatient("${booking.patient_hn}")' style='flex:1;padding:10px 0;background:#43a047;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:6px;' onmouseover='this.style.background="#388e3c"'><span style="font-size:16px;">🗓️</span>ส่ง Admit</button>`
-                : `<button disabled style='flex:1;padding:10px 0;background:#e0e0e0;color:#999;border:none;border-radius:8px;cursor:not-allowed;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px;' title='ยังไม่ถึงวัน Admit'><span style="font-size:16px;">🗓️</span>ส่ง Admit</button>`}
-              <button onclick='event.stopPropagation();openCancelModal("${booking.patient_hn}")' style='flex:1;padding:10px 0;background:#ef5350;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:6px;' onmouseover='this.style.background="#d32f2f"'><span style="font-size:16px;">❌</span>ยกเลิก</button>
             </div>
           </div>`;
         });
@@ -569,8 +575,70 @@
       return d.getFullYear() === today.getFullYear() && d.getMonth() === today.getMonth() && d.getDate() === today.getDate();
     }
     // Dummy handlers for modal actions (should be implemented or imported)
-    window.openConfirmedDetailModal = window.openConfirmedDetailModal || function(hn) { alert('ดูข้อมูลผู้ป่วย HN: '+hn); };
-    window.admitPatient = window.admitPatient || function(hn) { alert('ส่ง Admit HN: '+hn); };
+    window.openConfirmedDetailModal = window.openConfirmedDetailModal || function(hn) {
+      const bookingData = (typeof loadBookingData === 'function') ? loadBookingData() : JSON.parse(localStorage.getItem('bookingData')||'{}');
+      const patient = (bookingData.confirmed || []).find(p => p.patient_hn === hn);
+      if (!patient) { alert('ไม่พบข้อมูลผู้ป่วย'); return; }
+      // Build modal HTML
+      let html = `<div id='dashboard-patient-modal' style='position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.45);z-index:9999;display:flex;align-items:center;justify-content:center;'>`;
+      html += `<div style='background:#fff;padding:32px 28px 24px 28px;border-radius:18px;max-width:420px;width:95vw;box-shadow:0 8px 32px rgba(0,0,0,0.18);position:relative;'>`;
+      html += `<h3 style='color:#19724d;font-size:22px;font-weight:700;margin:0 0 18px 0;'>ข้อมูลผู้ป่วย</h3>`;
+      html += `<div style='margin-bottom:10px;'><b>HN:</b> ${patient.patient_hn}</div>`;
+      html += `<div style='margin-bottom:10px;'><b>ชื่อ-สกุล:</b> ${patient.patient_name || '-'}</div>`;
+      html += `<div style='margin-bottom:10px;'><b>Diagnosis:</b> <span style='color:#c62828;'>${patient.diagnosis || '-'}</span></div>`;
+      html += `<div style='margin-bottom:10px;'><b>อายุ:</b> ${patient.patient_age || '-'} ปี</div>`;
+      html += `<div style='margin-bottom:10px;'><b>เพศ:</b> ${patient.patient_gender || '-'}</div>`;
+      html += `<div style='margin-bottom:10px;'><b>เบอร์โทร:</b> ${patient.patient_phone || '-'}</div>`;
+      html += `<div style='margin-bottom:10px;'><b>วันที่ Admit:</b> ${formatDateTH(patient.admit_date)}</div>`;
+      html += `<div style='margin-bottom:10px;'><b>เตียง:</b> ${patient.assigned_bed || '-'}</div>`;
+      html += `<div style='margin-bottom:10px;'><b>แพ็กเกจ Lab:</b> ${patient.lab_package || '-'}</div>`;
+      html += `<div style='margin-bottom:10px;'><b>ช่องทางนัดหมาย:</b> ${patient.appointment_channel || '-'}</div>`;
+      html += `<div style='margin-bottom:10px;'><b>โรงพยาบาลส่งต่อ:</b> ${patient.refer_hospital || '-'}</div>`;
+      html += `<button onclick='document.getElementById("dashboard-patient-modal").remove()' style='margin-top:18px;padding:10px 0;width:100%;background:#43a047;color:white;border:none;border-radius:8px;font-size:16px;font-weight:700;cursor:pointer;'>ปิด</button>`;
+      html += `</div></div>`;
+      document.body.insertAdjacentHTML('beforeend', html);
+    };
+    window.admitPatient = window.admitPatient || function(hn) {
+      const bookingData = (typeof loadBookingData === 'function') ? loadBookingData() : JSON.parse(localStorage.getItem('bookingData')||'{}');
+      const patient = (bookingData.confirmed || []).find(p => p.patient_hn === hn);
+      if (!patient) { alert('ไม่พบข้อมูลผู้ป่วย'); return; }
+      // Show modal to select ward
+      let html = `<div id='dashboard-admit-modal' style='position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.45);z-index:9999;display:flex;align-items:center;justify-content:center;'>`;
+      html += `<div style='background:#fff;padding:32px 28px 24px 28px;border-radius:18px;max-width:420px;width:95vw;box-shadow:0 8px 32px rgba(0,0,0,0.18);position:relative;'>`;
+      html += `<h3 style='color:#19724d;font-size:22px;font-weight:700;margin:0 0 18px 0;'>เลือกหอผู้ป่วย</h3>`;
+      html += `<div style='margin-bottom:16px;'><b>HN:</b> ${patient.patient_hn} <br><b>ชื่อ-สกุล:</b> ${patient.patient_name || '-'}</div>`;
+      html += `<label for='dashboard-admit-ward' style='font-weight:600;color:#388e3c;'>เลือกหอผู้ป่วย *</label>`;
+      html += `<select id='dashboard-admit-ward' style='width:100%;padding:12px;margin:10px 0 18px 0;border:2px solid #c8e6c9;border-radius:8px;font-size:15px;'>`;
+      html += `<option value=''>-- เลือกหอผู้ป่วย --</option>`;
+      html += `<option value='floor2'>หอผู้ป่วยในชั้น 2</option>`;
+      html += `<option value='floor1' disabled>หอผู้ป่วยในชั้น 1 (Coming Soon)</option>`;
+      html += `</select>`;
+      html += `<button onclick='confirmDashboardAdmitPatient("${hn}")' style='width:100%;padding:12px;background:linear-gradient(135deg,#66bb6a 0%,#43a047 100%);color:white;border:none;border-radius:8px;font-size:16px;font-weight:700;cursor:pointer;'>✓ ยืนยันส่ง Admit</button>`;
+      html += `<button onclick='document.getElementById("dashboard-admit-modal").remove()' style='width:100%;padding:12px;background:#999;color:white;border:none;border-radius:8px;font-size:16px;font-weight:700;margin-top:10px;cursor:pointer;'>ปิด</button>`;
+      html += `</div></div>`;
+      document.body.insertAdjacentHTML('beforeend', html);
+    };
+
+    window.confirmDashboardAdmitPatient = function(hn) {
+      const ward = document.getElementById('dashboard-admit-ward').value;
+      if (!ward) { alert('กรุณาเลือกหอผู้ป่วย'); return; }
+      let bookingData = (typeof loadBookingData === 'function') ? loadBookingData() : JSON.parse(localStorage.getItem('bookingData')||'{}');
+      if (!bookingData.admitted) bookingData.admitted = [];
+      if (!bookingData.confirmed) bookingData.confirmed = [];
+      const idx = bookingData.confirmed.findIndex(p => p.patient_hn === hn);
+      if (idx === -1) { alert('ไม่พบข้อมูลผู้ป่วย'); return; }
+      const patient = bookingData.confirmed[idx];
+      patient.ward = ward;
+      patient.floor = ward; // Ensure floor is set for IPD filter
+      patient.admit_status = 'waiting'; // Set to 'waiting' for รอรับ Admit
+      patient.admit_time = new Date().toISOString();
+      bookingData.admitted.push(patient);
+      bookingData.confirmed.splice(idx, 1);
+      localStorage.setItem('bookingData', JSON.stringify(bookingData));
+      document.getElementById('dashboard-admit-modal').remove();
+      renderDashboardConfirmedList();
+      alert('ส่ง Admit สำเร็จ! ข้อมูลถูกส่งไปหอผู้ป่วยในแล้ว');
+    };
     window.openCancelModal = window.openCancelModal || function(hn) { alert('ยกเลิก HN: '+hn); };
     // Render on load
     renderDashboardConfirmedList();

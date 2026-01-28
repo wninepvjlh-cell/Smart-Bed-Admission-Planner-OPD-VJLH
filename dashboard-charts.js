@@ -186,8 +186,20 @@ setInterval(renderPieChart, 5000);
 onBookingDataChange(renderPieChart);
 
 function getBookingWaitingTimeData() {
-  const bookingData = JSON.parse(localStorage.getItem('bookingData')) || { booked: [] };
-  const patients = bookingData.booked || [];
+  const bookingData = JSON.parse(localStorage.getItem('bookingData')) || { booked: [], confirmed: [], admitted: [] };
+  // Combine all arrays and deduplicate
+  const all = [
+    ...(bookingData.booked || []),
+    ...(bookingData.confirmed || []),
+    ...(bookingData.admitted || [])
+  ];
+  const seen = new Set();
+  const patients = all.filter(function(patient) {
+    const key = patient.patient_hn || patient.hn || patient.patient_id || patient.id || (patient.assigned_bed ? 'bed:' + patient.assigned_bed : JSON.stringify(patient || {}));
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 
   function parseWaitingTime(val) {
     if (!val) return null;
@@ -226,8 +238,20 @@ const appointmentChannelDefinitions = [
 ];
 
 function getBookingChannelCounts() {
-  const bookingData = JSON.parse(localStorage.getItem('bookingData')) || { booked: [] };
-  const patients = bookingData.booked || [];
+  const bookingData = JSON.parse(localStorage.getItem('bookingData')) || { booked: [], confirmed: [], admitted: [] };
+  // Combine all arrays and deduplicate
+  const all = [
+    ...(bookingData.booked || []),
+    ...(bookingData.confirmed || []),
+    ...(bookingData.admitted || [])
+  ];
+  const seen = new Set();
+  const patients = all.filter(function(patient) {
+    const key = patient.patient_hn || patient.hn || patient.patient_id || patient.id || (patient.assigned_bed ? 'bed:' + patient.assigned_bed : JSON.stringify(patient || {}));
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
   const counts = appointmentChannelDefinitions.map(() => 0);
   let otherCount = 0;
 
@@ -392,8 +416,21 @@ onBookingDataChange(function() {
 });
 
 function getBookingPatients() {
-  const bookingData = JSON.parse(localStorage.getItem('bookingData')) || { booked: [] };
-  return bookingData.booked || [];
+  const bookingData = JSON.parse(localStorage.getItem('bookingData')) || { booked: [], confirmed: [], admitted: [] };
+  // Combine all arrays
+  const all = [
+    ...(bookingData.booked || []),
+    ...(bookingData.confirmed || []),
+    ...(bookingData.admitted || [])
+  ];
+  // Deduplicate by patient_hn, hn, patient_id, or id
+  const seen = new Set();
+  return all.filter(function(patient) {
+    const key = patient.patient_hn || patient.hn || patient.patient_id || patient.id || (patient.assigned_bed ? 'bed:' + patient.assigned_bed : JSON.stringify(patient || {}));
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 function getBookingDiseaseGroupIndex(diagnosis) {
