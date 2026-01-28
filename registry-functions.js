@@ -1053,11 +1053,18 @@ function openPostponeModal() {
   let hn = arguments.length > 0 ? arguments[0] : null;
   let patient = null;
   const bookingData = loadBookingData();
+  if (!hn) {
+    // Try to get HN from UI if available
+    const hnField = document.getElementById('postpone-patient-hn');
+    if (hnField && hnField.textContent) {
+      hn = hnField.textContent.trim();
+    }
+  }
   if (hn) {
     // หาใน booked ก่อน แล้วค่อยหาใน confirmed
     patient = (bookingData.booked || []).find(p => p.patient_hn === hn) || (bookingData.confirmed || []).find(p => p.patient_hn === hn);
-  } else if (currentConfirmedPatient) {
-    patient = (bookingData.confirmed || []).find(p => p.patient_hn === currentConfirmedPatient);
+  } else if (window.currentConfirmedPatient) {
+    patient = (bookingData.confirmed || []).find(p => p.patient_hn === window.currentConfirmedPatient);
   }
   if (!patient) {
     alert('ไม่พบข้อมูลผู้ป่วย');
