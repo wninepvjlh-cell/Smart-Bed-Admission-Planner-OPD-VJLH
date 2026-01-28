@@ -1088,51 +1088,56 @@ function closePostponeModal() {
 function confirmPostponeBooking() {
   const newDate = document.getElementById('postpone-new-date').value;
   const reason = document.getElementById('postpone-reason').value.trim();
-  
+
   if (!newDate) {
     alert('กรุณาเลือกวันที่จอง Admit ใหม่');
     return;
   }
-  
+
   if (!reason) {
     alert('กรุณาระบุเหตุผลการเลื่อนวัน');
     return;
   }
-  
+
   if (!currentPostponePatient) {
     alert('ไม่พบข้อมูลผู้ป่วย');
     return;
   }
-  
+
   const bookingData = JSON.parse(localStorage.getItem('bookingData')) || { booked: [], confirmed: [], admitted: [], cancelled: [] };
-  
-  // Find patient in confirmed list
-  const confirmedIndex = bookingData.confirmed.findIndex(p => p.patient_hn === currentPostponePatient.patient_hn);
-  
-  if (confirmedIndex === -1) {
+  let patient = null;
+  // Try to find in confirmed first
+  let confirmedIndex = bookingData.confirmed.findIndex(p => p.patient_hn === currentPostponePatient.patient_hn);
+  if (confirmedIndex !== -1) {
+    patient = bookingData.confirmed.splice(confirmedIndex, 1)[0];
+  } else {
+    // Try to find in booked
+    let bookedIndex = bookingData.booked.findIndex(p => p.patient_hn === currentPostponePatient.patient_hn);
+    if (bookedIndex !== -1) {
+      patient = bookingData.booked.splice(bookedIndex, 1)[0];
+    }
+  }
+  if (!patient) {
     alert('ไม่พบข้อมูลผู้ป่วย');
     return;
   }
-  
-  // Get patient data and update
-  const patient = bookingData.confirmed.splice(confirmedIndex, 1)[0];
-  
+
   // Save original date BEFORE changing
   const originalDate = patient.admit_date;
   const loggedUser = sessionStorage.getItem('app_user_name') || 'Unknown';
-  
+
   patient.postpone_original_date = originalDate;
   patient.admit_date = newDate;
   patient.postpone_reason = reason;
   patient.postpone_date = new Date().toISOString();
   patient.postponed = true; // Set flag for postponed status
   patient.postponed_by = loggedUser;
-  
-  // Move back to confirmed list (stay in confirmed, not booked)
+
+  // Always move to confirmed list
   bookingData.confirmed.push(patient);
-  
+
   localStorage.setItem('bookingData', JSON.stringify(bookingData));
-  
+
   // ส่งข้อมูลไปยัง Google Sheets (ถ้ามีการตั้งค่า)
   if (typeof sendPostponeDataToGoogleSheet === 'function' && isGoogleSheetConfigured()) {
     sendPostponeDataToGoogleSheet({
@@ -1155,16 +1160,16 @@ function confirmPostponeBooking() {
       // ไม่แสดง error ให้ผู้ใช้เห็น เพื่อไม่ให้รบกวนการทำงาน
     });
   }
-  
+
   alert(`✅ เลื่อนวันจองสำเร็จ\n\nชื่อ: ${patient.patient_name}\nHN: ${patient.patient_hn}\n\nวันที่ใหม่: ${formatDateTH(newDate)}\nเหตุผล: ${reason}`);
-  
+
   closePostponeModal();
-  
+
   // Close confirmed detail modal
   if (document.getElementById('confirmed-detail-modal').style.display === 'flex') {
     closeConfirmedDetailModal();
   }
-  
+
   displayConfirmedList();
   displayBookingList();
 }
