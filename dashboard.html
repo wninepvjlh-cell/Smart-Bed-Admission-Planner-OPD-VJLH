@@ -177,12 +177,12 @@
 
         <div style="width:100%;max-width:1100px;min-width:320px;margin:0 auto;box-sizing:border-box;display:flex;flex-direction:row;gap:24px;justify-content:center;align-items:stretch;">
           <section style="background:#fff;border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,0.06);padding:20px 24px 32px 24px;width:50%;min-width:220px;max-width:550px;min-height:420px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:stretch;align-items:stretch;">
-            <h2 class="dashboard-graph-title" style="margin-top:0;">Proportion of Disease Groups Admitted</h2>
+            <h2 class="dashboard-graph-title" style="margin-top:0;color:#006064;font-family:'Sarabun','Prompt','Segoe UI',Arial,sans-serif;font-weight:700;letter-spacing:0.2px;">Proportion of Disease Groups Admitted</h2>
             <canvas id="mainDiseasePieChart" height="180"></canvas>
             <div id="mainDiseasePieLegend" style="margin-top:18px;"></div>
           </section>
           <section style="background:#fff;border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,0.06);padding:20px 24px 32px 24px;width:50%;min-width:220px;max-width:550px;min-height:420px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:stretch;align-items:stretch;">
-            <h2 class="dashboard-graph-title" style="margin-top:0;">IMC : Non-IMC Ratio (Admitted)</h2>
+            <h2 class="dashboard-graph-title" style="margin-top:0;color:#006064;font-family:'Sarabun','Prompt','Segoe UI',Arial,sans-serif;font-weight:700;letter-spacing:0.2px;">IMC : Non-IMC Ratio (Admitted)</h2>
             <canvas id="imcNonImcBarChart" height="220"></canvas>
             <div id="imcNonImcBarLegend" style="margin-top:18px;"></div>
             <div style="display:flex;justify-content:center;gap:32px;margin-top:18px;font-size:1.08rem;font-weight:500;">
@@ -220,6 +220,22 @@
           <div id="dashboard-confirmed-list">
             <!-- Confirmed patient cards will be rendered here -->
           </div>
+        </section>
+
+        <!-- Waiting List Section -->
+        <section style="background:#fff;border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,0.06);padding:20px 24px 28px 24px;width:100%;max-width:1100px;min-width:320px;margin:0 auto 24px auto;display:flex;flex-direction:column;align-items:flex-start;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+            <h3 style="margin:0;font-size:1.15rem;color:#006064;font-weight:700;display:flex;align-items:center;gap:8px;">
+              <span style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:rgba(0,150,136,0.10);">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#009688" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="8" r="4"/>
+                  <rect x="4" y="16" width="16" height="4" rx="2"/>
+                </svg>
+              </span>
+              Waiting list
+            </h3>
+          </div>
+          <div style="font-size:1.05rem;font-weight:600;color:#00796b;">จำนวนผู้ป่วยรอ Admit (Booking + Booking Confirmed): <span id="dashboard-waiting-list-count">-</span> ราย</div>
         </section>
 
         <section style="width:100%;max-width:1100px;min-width:320px;margin:0 auto;box-sizing:border-box;background:linear-gradient(135deg,#d7f5f7 0%,#e2f8ef 50%,#f0fbf7 100%);border-radius:20px;box-shadow:0 8px 24px rgba(0,150,136,0.12);padding:24px 24px 32px 24px;display:flex;flex-direction:column;border-left:6px solid #4dd0e1;">
@@ -295,6 +311,7 @@
   <script src="vendor/chart.umd.min.js"></script>
   <script src="vendor/chartjs-plugin-datalabels.min.js"></script>
   <script src="ipd-functions.js"></script>
+  <script src="dashboard-waitinglist.js"></script>
   <script>
     function renderIMCRatioChart() {
       if (typeof getIMCNonIMCByDiseaseFloor2 !== 'function') {
