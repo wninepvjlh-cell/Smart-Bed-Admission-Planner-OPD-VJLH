@@ -163,12 +163,34 @@ function renderPieChart() {
 
   function renderCustomLegend(chart, legendId) {
     const ul = document.createElement('ul');
+    const data = chart.data.datasets[0].data;
     chart.data.labels.forEach((label, i) => {
       const li = document.createElement('li');
+      li.style.display = 'flex';
+      li.style.alignItems = 'center';
+      li.style.gap = '10px';
+      li.style.margin = '6px 0';
+      li.style.fontFamily = '"Sarabun", "Prompt", "Segoe UI", Arial, sans-serif';
+      li.style.fontWeight = '600';
+      li.style.fontSize = '1.08rem';
+      li.style.letterSpacing = '0.2px';
+      li.style.color = '#006064';
       const colorBox = document.createElement('span');
       colorBox.style.background = chart.data.datasets[0].backgroundColor[i];
+      colorBox.style.display = 'inline-block';
+      colorBox.style.width = '16px';
+      colorBox.style.height = '16px';
+      colorBox.style.marginRight = '4px';
+      colorBox.style.borderRadius = '4px';
+      colorBox.style.boxShadow = '0 1px 4px rgba(0,0,0,0.08)';
       li.appendChild(colorBox);
-      li.appendChild(document.createTextNode(label));
+      const text = document.createElement('span');
+      text.textContent = `${label} (${data[i]} คน)`;
+      text.style.flex = '1';
+      text.style.whiteSpace = 'nowrap';
+      text.style.overflow = 'hidden';
+      text.style.textOverflow = 'ellipsis';
+      li.appendChild(text);
       ul.appendChild(li);
     });
     ul.className = 'chartjs-legend-grid';
