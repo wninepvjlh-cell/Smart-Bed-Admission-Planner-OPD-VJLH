@@ -13,6 +13,7 @@
   <script src="access-control.js"></script>
  </head>
  <body>
+  
   <button type="button" id="logoutBtn" class="logout-button">Logout</button>
     <header style="background: linear-gradient(135deg, #80deea 0%, #81c784 100%); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);">
       <div style="padding: 24px; text-align: center;">
@@ -68,11 +69,8 @@
            btn.style.display = 'none';
          });
        }
-       
-       // Auto-load Floor 2 on page load
-       if (typeof showIPDFloor === 'function') {
-         showIPDFloor(2);
-       }
+       // Auto-load Floor 2 on page load (เรียกหลังฟังก์ชันถูกโหลดแน่นอน)
+       showIPDFloor(2);
     });
    </script>
    <main style="padding:24px;">
@@ -337,7 +335,7 @@
                 <span style="display:flex;align-items:center;gap:10px;">
                   <span style="display:inline-flex;align-items:center;gap:6px;">
                     <span style="width:20px;height:20px;border-radius:8px;border:1px solid rgba(0,150,136,0.35);background:linear-gradient(135deg,#b2ebf2 0%,#a5d6a7 100%);"></span>
-                    <span style="color:#004d40;font-weight:600;">จำนวนสูง</span>
+                    <span style="color:#004d40;font-weight:600;">จำนวนผู้ป่วย</span>
                   </span>
                   <span style="display:inline-flex;align-items:center;gap:6px;">
                     <span style="width:20px;height:20px;border-radius:8px;border:1px solid rgba(0,0,0,0.08);background:linear-gradient(135deg,#f5f7fa 0%,#eceff1 100%);"></span>

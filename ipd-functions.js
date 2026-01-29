@@ -1,3 +1,96 @@
+// ฟังก์ชันสำหรับสลับชั้นในหน้า IPD (ให้ปุ่มและข้อมูลทำงานปกติ)
+window.showIPDFloor = function showIPDFloor(floor) {
+  const floor1Btn = document.getElementById('btn-floor-1');
+  const floor2Btn = document.getElementById('btn-floor-2');
+  const activeBedsBtn = document.getElementById('btn-active-beds');
+  const floor1Content = document.getElementById('floor-1-content');
+  const floor2Content = document.getElementById('floor-2-content');
+  const activeBedsContent = document.getElementById('active-beds-content');
+
+  // Reset all
+  if (activeBedsBtn) {
+    activeBedsBtn.style.background = 'white';
+    activeBedsBtn.style.borderColor = '#bdbdbd';
+    activeBedsBtn.style.color = '#00796b';
+    activeBedsBtn.style.boxShadow = 'none';
+    activeBedsBtn.style.fontWeight = '600';
+  }
+  if (activeBedsContent) {
+    activeBedsContent.style.display = 'none';
+  }
+
+  if (floor === 1) {
+    if (floor1Btn) {
+      floor1Btn.style.background = 'linear-gradient(135deg, #b2ebf2 0%, #c8e6c9 100%)';
+      floor1Btn.style.borderColor = '#4dd0e1';
+      floor1Btn.style.color = '#00796b';
+      floor1Btn.style.fontWeight = '600';
+    }
+    if (floor2Btn) {
+      floor2Btn.style.background = 'white';
+      floor2Btn.style.borderColor = '#ddd';
+      floor2Btn.style.color = '#999';
+      floor2Btn.style.fontWeight = '500';
+    }
+    if (floor1Content) floor1Content.style.display = 'block';
+    if (floor2Content) floor2Content.style.display = 'none';
+    loadIPDFloor(1);
+  } else {
+    if (floor2Btn) {
+      floor2Btn.style.background = 'linear-gradient(135deg, #b2ebf2 0%, #c8e6c9 100%)';
+      floor2Btn.style.borderColor = '#4dd0e1';
+      floor2Btn.style.color = '#00796b';
+      floor2Btn.style.fontWeight = '600';
+    }
+    if (floor1Btn) {
+      floor1Btn.style.background = 'white';
+      floor1Btn.style.borderColor = '#ddd';
+      floor1Btn.style.color = '#999';
+      floor1Btn.style.fontWeight = '500';
+    }
+    if (floor1Content) floor1Content.style.display = 'none';
+    if (floor2Content) floor2Content.style.display = 'block';
+    loadIPDFloor(2);
+  }
+}
+
+window.showActiveBeds = function showActiveBeds() {
+  const floor1Btn = document.getElementById('btn-floor-1');
+  const floor2Btn = document.getElementById('btn-floor-2');
+  const activeBedsBtn = document.getElementById('btn-active-beds');
+  const floor1Content = document.getElementById('floor-1-content');
+  const floor2Content = document.getElementById('floor-2-content');
+  const activeBedsContent = document.getElementById('active-beds-content');
+
+  if (!activeBedsBtn || !activeBedsContent) {
+    return;
+  }
+
+  if (floor1Btn) {
+    floor1Btn.style.background = '#e0e0e0';
+    floor1Btn.style.borderColor = '#bdbdbd';
+    floor1Btn.style.color = '#999';
+    floor1Btn.style.fontWeight = '600';
+  }
+  if (floor2Btn) {
+    floor2Btn.style.background = '#e0e0e0';
+    floor2Btn.style.borderColor = '#bdbdbd';
+    floor2Btn.style.color = '#999';
+    floor2Btn.style.fontWeight = '600';
+  }
+  if (activeBedsBtn) {
+    activeBedsBtn.style.background = 'linear-gradient(135deg, #b2ebf2 0%, #c8e6c9 100%)';
+    activeBedsBtn.style.borderColor = '#4dd0e1';
+    activeBedsBtn.style.color = '#00796b';
+    activeBedsBtn.style.boxShadow = '0 2px 8px rgba(0,150,136,0.12)';
+    activeBedsBtn.style.fontWeight = '700';
+  }
+  if (floor1Content) floor1Content.style.display = 'none';
+  if (floor2Content) floor2Content.style.display = 'none';
+  if (activeBedsContent) activeBedsContent.style.display = 'block';
+  buildActiveBedsCalendarGrid();
+};
+
 (function runOneTimePatientDataPurge() {
   if (typeof window === 'undefined') {
     return;
@@ -216,28 +309,28 @@ function calculateActiveBedsCountsForMonth(floor, year, month) {
     if (floor && patient.floor && patient.floor !== floorKey) return;
     const admitDate = parseLocalDate(patient.admitted_date || patient.admit_date);
     if (!admitDate) return;
-    let dischargeDate = parseLocalDate(patient.discharge_date);
-    if (!dischargeDate) {
-      const expected = parseLocalDate(patient.expected_discharge_date);
-      dischargeDate = expected || new Date(today.getTime());
-    }
-    if (dischargeDate > today) {
-      dischargeDate = new Date(today.getTime());
-    }
-    if (dischargeDate < admitDate) {
-      dischargeDate = new Date(admitDate.getTime());
-    }
-    const rangeStart = admitDate > monthStart ? admitDate : monthStart;
-    const rangeEnd = dischargeDate < monthEnd ? dischargeDate : monthEnd;
-    if (rangeEnd < monthStart || rangeStart > monthEnd) return;
-    for (let cursor = new Date(rangeStart.getTime()); cursor <= rangeEnd; cursor.setDate(cursor.getDate() + 1)) {
-      const index = cursor.getDate() - 1;
-      if (index >= 0 && index < counts.length) {
-        counts[index] += 1;
-      }
+    if (admitDate.getFullYear() === year && admitDate.getMonth() === month) {
+      const idx = admitDate.getDate() - 1;
+      if (idx >= 0 && idx < daysInMonth) admitPerDay[idx] += 1;
     }
   });
-
+  // Discharge
+  discharged.forEach(patient => {
+    if (floor && patient.floor && patient.floor !== floorKey) return;
+    const dischargeDate = parseLocalDate(patient.discharge_date);
+    if (!dischargeDate) return;
+    if (dischargeDate.getFullYear() === year && dischargeDate.getMonth() === month) {
+      const idx = dischargeDate.getDate() - 1;
+      if (idx >= 0 && idx < daysInMonth) dischargePerDay[idx] += 1;
+    }
+  });
+  // คำนวณยอดผู้ป่วยคงเหลือแต่ละวัน (ยอดสุดท้ายของวัน)
+  let runningTotal = 0;
+  for (let i = 0; i < daysInMonth; i++) {
+    runningTotal += admitPerDay[i];
+    runningTotal -= dischargePerDay[i];
+    counts[i] = runningTotal;
+  }
   return counts;
 }
 
@@ -274,7 +367,7 @@ function buildActiveBedsCalendarGrid(year, month, counts) {
     const countFontSize = count > 0 ? '1.4rem' : '1.1rem';
     html += `<div style="min-height:96px;padding:12px;border-radius:14px;display:flex;flex-direction:column;box-shadow:0 6px 18px rgba(0,150,136,${count>0?0.14:0.05});background:${baseBg};border:${border};">
       <div style="font-size:0.95rem;font-weight:700;color:${dayColor};">${day}</div>
-      <div style="margin-top:4px;font-size:0.75rem;color:${dayColor};opacity:0.8;">Active beds</div>
+      <div style="margin-top:4px;font-size:0.75rem;color:${dayColor};opacity:0.8;">จำนวนผู้ป่วย</div>
       <div style="margin-top:auto;font-size:${countFontSize};font-weight:700;color:${countColor};">${count > 0 ? count : '-'}</div>
     </div>`;
   }
@@ -396,7 +489,7 @@ function showIPDFloor(floor) {
   }
 }
 
-function showActiveBeds() {
+window.showActiveBeds = function showActiveBeds() {
   const floor1Btn = document.getElementById('btn-floor-1');
   const floor2Btn = document.getElementById('btn-floor-2');
   const activeBedsBtn = document.getElementById('btn-active-beds');
@@ -1330,7 +1423,21 @@ function updateSummaryCards(admittedPatients, standardBeds, specialBeds) {
   const maleStandardEl = document.getElementById('ipd-male-standard');
   const maleSpecialEl = document.getElementById('ipd-male-special');
 
-  if (activeBedEl) activeBedEl.textContent = activeBeds;
+  // Calculate today's active beds using calculateActiveBedsCountsForMonth
+  let todayActiveBeds = activeBeds;
+  try {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = today.getMonth();
+    const day = today.getDate();
+    // Only for floor 2 summary
+    const counts = calculateActiveBedsCountsForMonth(2, year, month);
+    todayActiveBeds = counts[day - 1] || 0;
+  } catch (e) {
+    // fallback to previous logic
+  }
+
+  if (activeBedEl) activeBedEl.textContent = todayActiveBeds;
   if (totalBedsEl) totalBedsEl.textContent = totalBeds;
   if (totalPatientsEl) totalPatientsEl.textContent = totalPatients;
   if (femaleCountEl) femaleCountEl.textContent = femaleCount;
@@ -1356,7 +1463,7 @@ function updateSummaryCards(admittedPatients, standardBeds, specialBeds) {
   localStorage.setItem('ipd_male_special_floor2', maleSpecial);
   // Sync to Dashboard: save to localStorage for floor 2 only
   if (activeBedEl && activeBedEl.id === 'ipd-active-beds') {
-    localStorage.setItem('ipd_active_beds_floor2', activeBeds);
+    localStorage.setItem('ipd_active_beds_floor2', todayActiveBeds);
   }
 }
 
