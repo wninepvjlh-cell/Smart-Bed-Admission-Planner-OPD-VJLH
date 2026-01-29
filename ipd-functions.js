@@ -295,15 +295,13 @@ function ensureActiveBedsCalendarState() {
 function calculateActiveBedsCountsForMonth(floor, year, month) {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const counts = new Array(daysInMonth).fill(0);
+  const admitPerDay = new Array(daysInMonth).fill(0);
+  const dischargePerDay = new Array(daysInMonth).fill(0);
   const bookingData = JSON.parse(localStorage.getItem('bookingData')) || {};
   const admitted = Array.isArray(bookingData.admitted) ? bookingData.admitted : [];
   const discharged = Array.isArray(bookingData.discharged) ? bookingData.discharged : [];
   const allPatients = admitted.concat(discharged);
   const floorKey = `floor${floor}`;
-  const monthStart = new Date(year, month, 1);
-  const monthEnd = new Date(year, month, daysInMonth);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
 
   allPatients.forEach(patient => {
     if (floor && patient.floor && patient.floor !== floorKey) return;
@@ -314,7 +312,6 @@ function calculateActiveBedsCountsForMonth(floor, year, month) {
       if (idx >= 0 && idx < daysInMonth) admitPerDay[idx] += 1;
     }
   });
-  // Discharge
   discharged.forEach(patient => {
     if (floor && patient.floor && patient.floor !== floorKey) return;
     const dischargeDate = parseLocalDate(patient.discharge_date);
