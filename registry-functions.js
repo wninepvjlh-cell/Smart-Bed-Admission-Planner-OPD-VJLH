@@ -219,8 +219,9 @@ function changeMonth(offset) {
 function renderCalendar() {
   const bookingData = loadBookingData();
   const bookedList = bookingData.booked || [];
-  const postponedList = (bookingData.confirmed || []).filter(b => b.postponed === true);
-  const allForCalendar = [...bookedList, ...postponedList];
+  const confirmedList = bookingData.confirmed || [];
+  // Show all confirmed patients (not just postponed) in calendar
+  const allForCalendar = [...bookedList, ...confirmedList];
   const emptyState = document.getElementById('booking-empty-state');
   
   // Update month/year display
@@ -330,8 +331,8 @@ function renderCalendar() {
 function showDayBookings(day) {
   const bookingData = loadBookingData();
   const bookedList = bookingData.booked || [];
-  const postponedList = (bookingData.confirmed || []).filter(b => b.postponed === true);
-  const allForCalendar = [...bookedList, ...postponedList];
+  const confirmedList = bookingData.confirmed || [];
+  const allForCalendar = [...bookedList, ...confirmedList];
   
   // Filter bookings for this day
   const dayBookings = allForCalendar.filter(booking => {
