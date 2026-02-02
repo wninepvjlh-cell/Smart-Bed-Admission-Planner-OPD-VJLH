@@ -300,24 +300,42 @@ function calculateActiveBedsCountsForMonth(floor, year, month) {
   const bookingData = JSON.parse(localStorage.getItem('bookingData')) || {};
   const admitted = Array.isArray(bookingData.admitted) ? bookingData.admitted : [];
   const discharged = Array.isArray(bookingData.discharged) ? bookingData.discharged : [];
-  const allPatients = admitted.concat(discharged);
-  const floorKey = `floor${floor}`;
-
-  allPatients.forEach(patient => {
-    if (floor && patient.floor && patient.floor !== floorKey) return;
+  // Helper: robust floor check
+  function matchFloor(patient, floor) {
+    const f = String(floor);
+    return (
+      (patient.floor && (patient.floor === f || patient.floor === `floor${f}`)) ||
+      (patient.floor_name && (patient.floor_name === f || patient.floor_name === `floor${f}`)) ||
+      (patient.ward && (patient.ward === f || patient.ward === `floor${f}`)) ||
+      (patient.ward_floor && (patient.ward_floor === f || patient.ward_floor === `floor${f}`))
+    );
+  }
+  // Map patient HN to admit/discharge dates for this floor only
+  const patientMap = {};
+  admitted.forEach(patient => {
+    if (floor && !matchFloor(patient, floor)) return;
+    const hn = patient.patient_hn || patient.hn || patient.id;
     const admitDate = parseLocalDate(patient.admitted_date || patient.admit_date);
     if (!admitDate) return;
-    if (admitDate.getFullYear() === year && admitDate.getMonth() === month) {
-      const idx = admitDate.getDate() - 1;
-      if (idx >= 0 && idx < daysInMonth) admitPerDay[idx] += 1;
-    }
+    if (!patientMap[hn]) patientMap[hn] = {};
+    patientMap[hn].admit = admitDate;
   });
   discharged.forEach(patient => {
-    if (floor && patient.floor && patient.floor !== floorKey) return;
+    if (floor && !matchFloor(patient, floor)) return;
+    const hn = patient.patient_hn || patient.hn || patient.id;
     const dischargeDate = parseLocalDate(patient.discharge_date);
     if (!dischargeDate) return;
-    if (dischargeDate.getFullYear() === year && dischargeDate.getMonth() === month) {
-      const idx = dischargeDate.getDate() - 1;
+    if (!patientMap[hn]) patientMap[hn] = {};
+    patientMap[hn].discharge = dischargeDate;
+  });
+  // For each patient, increment admitPerDay and dischargePerDay for this month only
+  Object.values(patientMap).forEach(({ admit, discharge }) => {
+    if (admit && admit.getFullYear() === year && admit.getMonth() === month) {
+      const idx = admit.getDate() - 1;
+      if (idx >= 0 && idx < daysInMonth) admitPerDay[idx] += 1;
+    }
+    if (discharge && discharge.getFullYear() === year && discharge.getMonth() === month) {
+      const idx = discharge.getDate() - 1;
       if (idx >= 0 && idx < daysInMonth) dischargePerDay[idx] += 1;
     }
   });
