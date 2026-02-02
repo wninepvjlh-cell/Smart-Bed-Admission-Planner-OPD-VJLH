@@ -596,7 +596,10 @@ function displayConfirmedList() {
 }
 
 // Show registry tab
-window.showRegistryTab = function showRegistryTab(tabName) {
+if (typeof window !== 'undefined') {
+  window.showRegistryTab = showRegistryTab;
+}
+function showRegistryTab(tabName) {
   // Hide all tabs
   document.getElementById('tab-booking-content').style.display = 'none';
   document.getElementById('tab-confirmed-content').style.display = 'none';
