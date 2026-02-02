@@ -614,14 +614,23 @@ function showRegistryTab(tabName) {
 // Open call confirmation modal
 function openCallModal(hn) {
   const bookingData = loadBookingData();
-  const patient = bookingData.booked.find(p => p.patient_hn === hn);
-  
+  // Try to find patient in all relevant lists
+  let patient = bookingData.booked.find(p => p.patient_hn === hn);
+  let patientList = 'booked';
+  if (!patient && Array.isArray(bookingData.confirmed)) {
+    patient = bookingData.confirmed.find(p => p.patient_hn === hn);
+    patientList = 'confirmed';
+  }
+  if (!patient && Array.isArray(bookingData.postponed)) {
+    patient = bookingData.postponed.find(p => p.patient_hn === hn);
+    patientList = 'postponed';
+  }
   if (!patient) {
     alert('ไม่พบข้อมูลผู้ป่วย');
     return;
   }
-  
   currentCallPatient = hn;
+  currentCallPatientList = patientList;
   document.getElementById('call-patient-hn').textContent = hn;
   document.getElementById('call-patient-name').textContent = patient.patient_name;
   document.getElementById('call-note').value = '';
@@ -980,69 +989,71 @@ function closeCancelModal() {
   currentCancelPatient = null;
   
   // If confirmed detail modal was open, restore it
-  if (currentConfirmedPatient) {
-    document.getElementById('confirmed-detail-modal').style.display = 'flex';
-  }
-}
-
-// Confirm cancel booking
-function confirmCancelBooking() {
-  if (!currentCancelPatient) {
-    return;
-  }
-  
-  const reason = document.getElementById('cancel-reason').value.trim();
-  const loggedUser = sessionStorage.getItem('app_user_name') || 'Unknown';
-  
-  if (!reason) {
-    alert('กรุณาระบุเหตุผลการยกเลิก');
-    return;
-  }
-  
-  const bookingData = loadBookingData();
-  const confirmedIndex = bookingData.confirmed.findIndex(p => p.patient_hn === currentCancelPatient);
-  
-  if (confirmedIndex === -1) {
-    alert('ไม่พบข้อมูลผู้ป่วย');
-    return;
-  }
-  
-  const patient = bookingData.confirmed[confirmedIndex];
-  
-  // Create cancelled record (optional - for record keeping)
-  const cancelTimestamp = new Date().toISOString();
-  const cancelledPatient = {
-    ...patient,
-    cancel_reason: reason,
-    cancel_date: cancelTimestamp,
-    status: 'cancelled',
-    cancelled_by: loggedUser,
-    action_note: `ยกเลิกโดย ${loggedUser} เหตุผล: ${reason}`
-  };
-  
-  // Initialize cancelled array if not exists
-  if (!bookingData.cancelled) {
-    bookingData.cancelled = [];
-  }
-  
-  // Move to cancelled list
-  bookingData.cancelled.push(cancelledPatient);
-  bookingData.confirmed.splice(confirmedIndex, 1);
-  
-  localStorage.setItem('bookingData', JSON.stringify(bookingData));
-
-  // Google Sheets sync disabled
-  
-  alert(`✅ ยกเลิกการจองสำเร็จ\n\nชื่อ: ${patient.patient_name}\nHN: ${patient.patient_hn}\n\nเหตุผล: ${reason}`);
-  
-  closeCancelModal();
-  
-  // Close confirmed detail modal if open
-  if (document.getElementById('confirmed-detail-modal').style.display === 'flex') {
-    closeConfirmedDetailModal();
-  }
-  
-  displayConfirmedList();
+  function saveCallConfirmation() {
+    console.log('saveCallConfirmation called');
+    console.log('currentCallPatient:', currentCallPatient);
+    if (!currentCallPatient) {
+      console.log('No currentCallPatient');
+      return;
+    }
+    const note = document.getElementById('call-note').value;
+    const loggedUser = sessionStorage.getItem('app_user_name') || 'Unknown';
+    const bookingData = loadBookingData();
+    // Try to find patient in all lists
+    let patient = null;
+    let listName = null;
+    let idx = -1;
+    if (Array.isArray(bookingData.booked)) {
+      idx = bookingData.booked.findIndex(p => p.patient_hn === currentCallPatient);
+      if (idx !== -1) {
+        patient = bookingData.booked[idx];
+        listName = 'booked';
+      }
+    }
+    if (!patient && Array.isArray(bookingData.confirmed)) {
+      idx = bookingData.confirmed.findIndex(p => p.patient_hn === currentCallPatient);
+      if (idx !== -1) {
+        patient = bookingData.confirmed[idx];
+        listName = 'confirmed';
+      }
+    }
+    if (!patient && Array.isArray(bookingData.postponed)) {
+      idx = bookingData.postponed.findIndex(p => p.patient_hn === currentCallPatient);
+      if (idx !== -1) {
+        patient = bookingData.postponed[idx];
+        listName = 'postponed';
+      }
+    }
+    if (!patient) {
+      alert('ไม่พบข้อมูลผู้ป่วย');
+      return;
+    }
+    // Move to confirmed list if not already there
+    const confirmedPatient = {
+      ...patient,
+      call_result: 'confirmed',
+      call_note: note,
+      confirm_date: new Date().toISOString(),
+      confirmed_by: loggedUser,
+      action_note: `โทรยืนยันโดย ${loggedUser}`
+    };
+    if (!bookingData.confirmed) {
+      bookingData.confirmed = [];
+    }
+    // Only add if not already in confirmed
+    if (!bookingData.confirmed.some(p => p.patient_hn === currentCallPatient)) {
+      bookingData.confirmed.push(confirmedPatient);
+    }
+    // Remove from previous list if not already in confirmed
+    if (listName === 'booked' && idx !== -1) {
+      bookingData.booked.splice(idx, 1);
+    } else if (listName === 'postponed' && idx !== -1) {
+      bookingData.postponed.splice(idx, 1);
+    }
+    localStorage.setItem('bookingData', JSON.stringify(bookingData));
+    alert(`✅ ยืนยันการโทร ${patient.patient_name}\n\nข้อมูลถูกย้ายไปที่ "Booking Confirmed" แล้ว`);
+    closeCallModal();
+    displayConfirmedList();
 }
 
 // Postpone booking functions
