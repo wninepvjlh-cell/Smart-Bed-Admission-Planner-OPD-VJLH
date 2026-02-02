@@ -1025,73 +1025,78 @@ function openCancelModal(hn) {
 function closeCancelModal() {
   document.getElementById('cancel-modal').style.display = 'none';
   currentCancelPatient = null;
-  
   // If confirmed detail modal was open, restore it
-  function saveCallConfirmation() {
-    console.log('saveCallConfirmation called');
-    console.log('currentCallPatient:', currentCallPatient);
-    if (!currentCallPatient) {
-      console.log('No currentCallPatient');
-      return;
+  if (currentConfirmedPatient) {
+    document.getElementById('confirmed-detail-modal').style.display = 'flex';
+  }
+}
+
+// Moved out: saveCallConfirmation should be a top-level function
+function saveCallConfirmation() {
+  console.log('saveCallConfirmation called');
+  console.log('currentCallPatient:', currentCallPatient);
+  if (!currentCallPatient) {
+    console.log('No currentCallPatient');
+    return;
+  }
+  const note = document.getElementById('call-note').value;
+  const loggedUser = sessionStorage.getItem('app_user_name') || 'Unknown';
+  const bookingData = loadBookingData();
+  // Try to find patient in all lists
+  let patient = null;
+  let listName = null;
+  let idx = -1;
+  if (Array.isArray(bookingData.booked)) {
+    idx = bookingData.booked.findIndex(p => p.patient_hn === currentCallPatient);
+    if (idx !== -1) {
+      patient = bookingData.booked[idx];
+      listName = 'booked';
     }
-    const note = document.getElementById('call-note').value;
-    const loggedUser = sessionStorage.getItem('app_user_name') || 'Unknown';
-    const bookingData = loadBookingData();
-    // Try to find patient in all lists
-    let patient = null;
-    let listName = null;
-    let idx = -1;
-    if (Array.isArray(bookingData.booked)) {
-      idx = bookingData.booked.findIndex(p => p.patient_hn === currentCallPatient);
-      if (idx !== -1) {
-        patient = bookingData.booked[idx];
-        listName = 'booked';
-      }
+  }
+  if (!patient && Array.isArray(bookingData.confirmed)) {
+    idx = bookingData.confirmed.findIndex(p => p.patient_hn === currentCallPatient);
+    if (idx !== -1) {
+      patient = bookingData.confirmed[idx];
+      listName = 'confirmed';
     }
-    if (!patient && Array.isArray(bookingData.confirmed)) {
-      idx = bookingData.confirmed.findIndex(p => p.patient_hn === currentCallPatient);
-      if (idx !== -1) {
-        patient = bookingData.confirmed[idx];
-        listName = 'confirmed';
-      }
+  }
+  if (!patient && Array.isArray(bookingData.postponed)) {
+    idx = bookingData.postponed.findIndex(p => p.patient_hn === currentCallPatient);
+    if (idx !== -1) {
+      patient = bookingData.postponed[idx];
+      listName = 'postponed';
     }
-    if (!patient && Array.isArray(bookingData.postponed)) {
-      idx = bookingData.postponed.findIndex(p => p.patient_hn === currentCallPatient);
-      if (idx !== -1) {
-        patient = bookingData.postponed[idx];
-        listName = 'postponed';
-      }
-    }
-    if (!patient) {
-      alert('ไม่พบข้อมูลผู้ป่วย');
-      return;
-    }
-    // Move to confirmed list if not already there
-    const confirmedPatient = {
-      ...patient,
-      call_result: 'confirmed',
-      call_note: note,
-      confirm_date: new Date().toISOString(),
-      confirmed_by: loggedUser,
-      action_note: `โทรยืนยันโดย ${loggedUser}`
-    };
-    if (!bookingData.confirmed) {
-      bookingData.confirmed = [];
-    }
-    // Only add if not already in confirmed
-    if (!bookingData.confirmed.some(p => p.patient_hn === currentCallPatient)) {
-      bookingData.confirmed.push(confirmedPatient);
-    }
-    // Remove from previous list if not already in confirmed
-    if (listName === 'booked' && idx !== -1) {
-      bookingData.booked.splice(idx, 1);
-    } else if (listName === 'postponed' && idx !== -1) {
-      bookingData.postponed.splice(idx, 1);
-    }
-    localStorage.setItem('bookingData', JSON.stringify(bookingData));
-    alert(`✅ ยืนยันการโทร ${patient.patient_name}\n\nข้อมูลถูกย้ายไปที่ "Booking Confirmed" แล้ว`);
-    closeCallModal();
-    displayConfirmedList();
+  }
+  if (!patient) {
+    alert('ไม่พบข้อมูลผู้ป่วย');
+    return;
+  }
+  // Move to confirmed list if not already there
+  const confirmedPatient = {
+    ...patient,
+    call_result: 'confirmed',
+    call_note: note,
+    confirm_date: new Date().toISOString(),
+    confirmed_by: loggedUser,
+    action_note: `โทรยืนยันโดย ${loggedUser}`
+  };
+  if (!bookingData.confirmed) {
+    bookingData.confirmed = [];
+  }
+  // Only add if not already in confirmed
+  if (!bookingData.confirmed.some(p => p.patient_hn === currentCallPatient)) {
+    bookingData.confirmed.push(confirmedPatient);
+  }
+  // Remove from previous list if not already in confirmed
+  if (listName === 'booked' && idx !== -1) {
+    bookingData.booked.splice(idx, 1);
+  } else if (listName === 'postponed' && idx !== -1) {
+    bookingData.postponed.splice(idx, 1);
+  }
+  localStorage.setItem('bookingData', JSON.stringify(bookingData));
+  alert(`✅ ยืนยันการโทร ${patient.patient_name}\n\nข้อมูลถูกย้ายไปที่ "Booking Confirmed" แล้ว`);
+  closeCallModal();
+  displayConfirmedList();
 }
 
 // Postpone booking functions
