@@ -207,7 +207,10 @@ function canAdmitToday(admitDateString) {
 
 // Display booking list (not confirmed yet)
 function displayBookingList() {
-  renderCalendar();
+  // แสดงเฉพาะเคสที่ยังไม่ได้กดโทร (call_result !== 'confirmed' และ called !== true)
+  const bookingData = loadBookingData();
+  const bookedList = (bookingData.booked || []).filter(b => b.call_result !== 'confirmed' && b.called !== true);
+  renderCalendar(bookedList);
 }
 
 // Change month
@@ -225,11 +228,14 @@ function changeMonth(offset) {
 
 // Render calendar
 function renderCalendar() {
-  const bookingData = loadBookingData();
-  const bookedList = bookingData.booked || [];
-  const confirmedList = bookingData.confirmed || [];
-  // Show all confirmed patients (not just postponed) in calendar
-  const allForCalendar = [...bookedList, ...confirmedList];
+  // รับ bookedList จาก displayBookingList (เฉพาะเคสที่ยังไม่ได้กดโทร)
+  let bookedList = arguments.length > 0 ? arguments[0] : null;
+  if (!bookedList) {
+    const bookingData = loadBookingData();
+    bookedList = bookingData.booked || [];
+  }
+  // ไม่รวม confirmed ในหน้า Booking/ปฏิทิน
+  const allForCalendar = bookedList;
   const emptyState = document.getElementById('booking-empty-state');
   
   // Update month/year display
