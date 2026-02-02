@@ -314,7 +314,7 @@ function renderCalendar() {
   
   calendarHTML += '</div>';
   
-  // Only update the calendar grid, not the empty message div
+  // Always show calendar grid, even if no bookings
   const calendarDiv = document.getElementById('booking-calendar');
   const calendarEmptyMsg = document.getElementById('calendar-empty-message');
   // Remove previous grid if exists
@@ -325,10 +325,15 @@ function renderCalendar() {
   gridWrapper.className = 'calendar-grid';
   gridWrapper.innerHTML = calendarHTML;
   calendarDiv.insertBefore(gridWrapper, calendarEmptyMsg);
-  // Show/hide empty message
+  // Show empty message only if no bookings
   const hasAnyBooking = Object.keys(bookingsByDate).length > 0;
   if (calendarEmptyMsg) {
     calendarEmptyMsg.style.display = hasAnyBooking ? 'none' : 'block';
+    // Move message below calendar grid for clarity
+    if (!hasAnyBooking) {
+      calendarEmptyMsg.style.marginTop = '16px';
+      calendarEmptyMsg.textContent = 'ไม่มีรายการจองเตียงในเดือนนี้';
+    }
   }
   if (emptyState) {
     emptyState.style.display = bookedList.length === 0 ? 'flex' : 'none';
