@@ -1,3 +1,11 @@
+// Fallback: forcibly attach showRegistryTab to window after DOMContentLoaded if not present
+if (typeof window !== 'undefined') {
+  document.addEventListener('DOMContentLoaded', function() {
+    if (typeof window.showRegistryTab !== 'function') {
+      window.showRegistryTab = showRegistryTab;
+    }
+  });
+}
 (function runOneTimePatientDataPurge() {
   if (typeof window === 'undefined') {
     return;
@@ -596,10 +604,22 @@ function displayConfirmedList() {
 }
 
 // Show registry tab
-if (typeof window !== 'undefined') {
-  window.showRegistryTab = showRegistryTab;
-}
 function showRegistryTab(tabName) {
+  if (typeof window !== 'undefined') {
+    window.showRegistryTab = showRegistryTab;
+  }
+  // Fallback: forcibly attach showRegistryTab to window after DOMContentLoaded if not present
+  if (typeof window !== 'undefined') {
+    document.addEventListener('DOMContentLoaded', function() {
+      if (typeof window.showRegistryTab !== 'function') {
+        window.showRegistryTab = showRegistryTab;
+      }
+    });
+  }
+  // Ensure global assignment after function declaration
+  if (typeof window !== 'undefined') {
+    window.showRegistryTab = showRegistryTab;
+  }
   // Hide all tabs
   document.getElementById('tab-booking-content').style.display = 'none';
   document.getElementById('tab-confirmed-content').style.display = 'none';
