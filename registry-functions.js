@@ -307,6 +307,12 @@ function renderCalendar() {
   
   document.getElementById('booking-calendar').innerHTML = calendarHTML;
 
+  // Show empty message if no bookings in this month
+  const calendarEmptyMsg = document.getElementById('calendar-empty-message');
+  const hasAnyBooking = Object.keys(bookingsByDate).length > 0;
+  if (calendarEmptyMsg) {
+    calendarEmptyMsg.style.display = hasAnyBooking ? 'none' : 'block';
+  }
   if (emptyState) {
     emptyState.style.display = bookedList.length === 0 ? 'flex' : 'none';
   }
