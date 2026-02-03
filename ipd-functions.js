@@ -340,21 +340,31 @@ function calculateActiveBedsCountsForMonth(floor, year, month) {
     }
   });
   // ปรับสูตร: ถ้า discharge ในวันนั้น จะไม่นับในวันนั้นทันที
+  // 1. นับผู้ป่วยที่ admit ก่อนวันแรกของเดือนและยังไม่ discharge ก่อนวันแรก
+  const firstDay = new Date(year, month, 1);
+  let runningTotal = 0;
+  Object.values(patientMap).forEach(({ admit, discharge }) => {
+    if (admit && admit < firstDay && (!discharge || discharge >= firstDay)) {
+      runningTotal++;
+    }
+  });
   for (let i = 0; i < daysInMonth; i++) {
     // วัน i (0-based) คือวันที่ i+1
-    let count = 0;
+    const currentDay = new Date(year, month, i + 1);
+    // admit ใหม่ในวันนั้น
+    let admitToday = 0;
+    let dischargeToday = 0;
     Object.values(patientMap).forEach(({ admit, discharge }) => {
-      // admit ก่อนหรือเท่ากับวันนั้น
-      const admitOk = admit && admit.getFullYear() === year && admit.getMonth() === month && admit.getDate() <= (i + 1);
-      // discharge หลังวันนั้น หรือยังไม่ discharge
-      const notDischarged = !discharge || (discharge.getFullYear() === year && discharge.getMonth() === month && discharge.getDate() > (i + 1));
-      // ถ้า discharge ในวันนั้น จะไม่นับ
-      const dischargedToday = discharge && discharge.getFullYear() === year && discharge.getMonth() === month && discharge.getDate() === (i + 1);
-      if (admitOk && notDischarged && !dischargedToday) {
-        count++;
+      if (admit && admit.getFullYear() === year && admit.getMonth() === month && admit.getDate() === (i + 1)) {
+        admitToday++;
+      }
+      if (discharge && discharge.getFullYear() === year && discharge.getMonth() === month && discharge.getDate() === (i + 1)) {
+        dischargeToday++;
       }
     });
-    counts[i] = count;
+    runningTotal += admitToday;
+    runningTotal -= dischargeToday;
+    counts[i] = runningTotal;
   }
   return counts;
 }
@@ -379,7 +389,7 @@ function buildActiveBedsCalendarGrid(year, month, counts) {
   }
 
   for (let day = 1; day <= counts.length; day++) {
-    const count = counts[day - 1] || 0;
+    const count = typeof counts[day - 1] === 'number' ? counts[day - 1] : 0;
     const intensity = maxCount > 0 ? count / maxCount : 0;
     const baseBg = count > 0
       ? `linear-gradient(135deg, rgba(178,235,242,${0.35 + intensity * 0.4}) 0%, rgba(129,199,132,${0.3 + intensity * 0.45}) 100%)`
@@ -393,7 +403,7 @@ function buildActiveBedsCalendarGrid(year, month, counts) {
     html += `<div style="min-height:96px;padding:12px;border-radius:14px;display:flex;flex-direction:column;box-shadow:0 6px 18px rgba(0,150,136,${count>0?0.14:0.05});background:${baseBg};border:${border};">
       <div style="font-size:0.95rem;font-weight:700;color:${dayColor};">${day}</div>
       <div style="margin-top:4px;font-size:0.75rem;color:${dayColor};opacity:0.8;">จำนวนผู้ป่วย</div>
-      <div style="margin-top:auto;font-size:${countFontSize};font-weight:700;color:${countColor};">${count > 0 ? count : '-'}</div>
+      <div style="margin-top:auto;font-size:${countFontSize};font-weight:700;color:${countColor};">${count}</div>
     </div>`;
   }
 
