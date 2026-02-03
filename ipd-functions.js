@@ -310,7 +310,7 @@ function calculateActiveBedsCountsForMonth(floor, year, month) {
       (patient.ward_floor && (patient.ward_floor === f || patient.ward_floor === `floor${f}`))
     );
   }
-  // Map patient HN to admit/discharge dates for this floor only
+  // Map patient HN to admit/discharge dates for this floor only (ครอบคลุม admit เดิมและ discharge ทุกกรณี)
   const patientMap = {};
   admitted.forEach(patient => {
     if (floor && !matchFloor(patient, floor)) return;
@@ -318,7 +318,10 @@ function calculateActiveBedsCountsForMonth(floor, year, month) {
     const admitDate = parseLocalDate(patient.admitted_date || patient.admit_date);
     if (!admitDate) return;
     if (!patientMap[hn]) patientMap[hn] = {};
-    patientMap[hn].admit = admitDate;
+    // ถ้ามีหลาย admit ให้เลือก admit ที่เก่าที่สุด
+    if (!patientMap[hn].admit || admitDate < patientMap[hn].admit) {
+      patientMap[hn].admit = admitDate;
+    }
   });
   discharged.forEach(patient => {
     if (floor && !matchFloor(patient, floor)) return;
@@ -326,7 +329,10 @@ function calculateActiveBedsCountsForMonth(floor, year, month) {
     const dischargeDate = parseLocalDate(patient.discharge_date);
     if (!dischargeDate) return;
     if (!patientMap[hn]) patientMap[hn] = {};
-    patientMap[hn].discharge = dischargeDate;
+    // ถ้ามีหลาย discharge ให้เลือก discharge ที่ใหม่ที่สุด
+    if (!patientMap[hn].discharge || dischargeDate > patientMap[hn].discharge) {
+      patientMap[hn].discharge = dischargeDate;
+    }
   });
   // For each patient, increment admitPerDay and dischargePerDay for this month only
   Object.values(patientMap).forEach(({ admit, discharge }) => {
