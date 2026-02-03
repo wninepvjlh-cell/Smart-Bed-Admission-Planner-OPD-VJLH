@@ -313,23 +313,28 @@ function calculateActiveBedsCountsForMonth(floor, year, month) {
   // Map patient HN to admit/discharge dates for this floor only (ครอบคลุม admit เดิมและ discharge ทุกกรณี)
   const patientMap = {};
   admitted.forEach(patient => {
-    if (floor && !matchFloor(patient, floor)) return;
+    // รองรับหลาย key ของชั้น
+    const floorValue = patient.floor || patient.floor_name || patient.ward || patient.ward_floor;
+    if (floor && String(floorValue).replace(/\D/g, '') !== String(floor)) return;
     const hn = patient.patient_hn || patient.hn || patient.id;
-    const admitDate = parseLocalDate(patient.admitted_date || patient.admit_date);
+    // รองรับหลาย key ของวันที่ admit
+    const admitDateRaw = patient.admitted_date || patient.admit_date || patient.date_admit || patient.dateAdmit;
+    const admitDate = parseLocalDate(admitDateRaw);
     if (!admitDate) return;
     if (!patientMap[hn]) patientMap[hn] = {};
-    // เก็บ admit ที่เก่าที่สุด (เพื่อรองรับ admit ก่อนเดือนนี้)
     if (!patientMap[hn].admit || admitDate < patientMap[hn].admit) {
       patientMap[hn].admit = admitDate;
     }
   });
   discharged.forEach(patient => {
-    if (floor && !matchFloor(patient, floor)) return;
+    const floorValue = patient.floor || patient.floor_name || patient.ward || patient.ward_floor;
+    if (floor && String(floorValue).replace(/\D/g, '') !== String(floor)) return;
     const hn = patient.patient_hn || patient.hn || patient.id;
-    const dischargeDate = parseLocalDate(patient.discharge_date);
+    // รองรับหลาย key ของวันที่ discharge
+    const dischargeDateRaw = patient.discharge_date || patient.date_discharge || patient.dateDischarge;
+    const dischargeDate = parseLocalDate(dischargeDateRaw);
     if (!dischargeDate) return;
     if (!patientMap[hn]) patientMap[hn] = {};
-    // ถ้ามีหลาย discharge ให้เลือก discharge ที่ใหม่ที่สุด
     if (!patientMap[hn].discharge || dischargeDate > patientMap[hn].discharge) {
       patientMap[hn].discharge = dischargeDate;
     }
