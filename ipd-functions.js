@@ -339,12 +339,22 @@ function calculateActiveBedsCountsForMonth(floor, year, month) {
       if (idx >= 0 && idx < daysInMonth) dischargePerDay[idx] += 1;
     }
   });
-  // คำนวณยอดผู้ป่วยคงเหลือแต่ละวัน (ยอดสุดท้ายของวัน)
-  let runningTotal = 0;
+  // ปรับสูตร: ถ้า discharge ในวันนั้น จะไม่นับในวันนั้นทันที
   for (let i = 0; i < daysInMonth; i++) {
-    runningTotal += admitPerDay[i];
-    runningTotal -= dischargePerDay[i];
-    counts[i] = runningTotal;
+    // วัน i (0-based) คือวันที่ i+1
+    let count = 0;
+    Object.values(patientMap).forEach(({ admit, discharge }) => {
+      // admit ก่อนหรือเท่ากับวันนั้น
+      const admitOk = admit && admit.getFullYear() === year && admit.getMonth() === month && admit.getDate() <= (i + 1);
+      // discharge หลังวันนั้น หรือยังไม่ discharge
+      const notDischarged = !discharge || (discharge.getFullYear() === year && discharge.getMonth() === month && discharge.getDate() > (i + 1));
+      // ถ้า discharge ในวันนั้น จะไม่นับ
+      const dischargedToday = discharge && discharge.getFullYear() === year && discharge.getMonth() === month && discharge.getDate() === (i + 1);
+      if (admitOk && notDischarged && !dischargedToday) {
+        count++;
+      }
+    });
+    counts[i] = count;
   }
   return counts;
 }
