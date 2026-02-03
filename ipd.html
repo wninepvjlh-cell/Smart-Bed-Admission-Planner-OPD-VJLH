@@ -53,7 +53,6 @@
        if (userNameLabel && storedUserName) {
          userNameLabel.textContent = storedUserName;
        }
-       
        const allowedRoles = new Set(['ipd', 'opd', 'admin']);
        const isRoleAllowed = allowedRoles.has(normalizedRole) || (window.sbpAccessControl && typeof window.sbpAccessControl.isPageAllowed === 'function' && window.sbpAccessControl.isPageAllowed('ipd.html'));
        if (!isRoleAllowed) {
@@ -61,7 +60,6 @@
          window.location.href = 'index.html';
          return;
        }
-
        if (normalizedRole === 'ipd') {
          // Hide OPD navigation buttons
          const opdButtons = document.querySelectorAll('.nav-opd');
@@ -71,6 +69,10 @@
        }
        // Auto-load Floor 2 on page load (เรียกหลังฟังก์ชันถูกโหลดแน่นอน)
        showIPDFloor(2);
+       // Force reload beds grid for floor 2 (fix: always show beds)
+       if (typeof loadIPDFloor === 'function') {
+         loadIPDFloor(2);
+       }
     });
    </script>
    <main style="padding:24px;">
@@ -290,6 +292,7 @@
            </div>
 
 
+
            <div style="margin-bottom:20px;">
              <h4 style="color:#00796b;font-size:15px;font-weight:600;margin:0 0 12px 0;">เตียงสามัญ (B4 - B12, B14 - B16)</h4>
              <div id="floor-2-standard-list" style="display:grid;grid-template-columns:repeat(6, 1fr);gap:12px;">
@@ -303,6 +306,7 @@
              </div>
            </div>
          </div>
+
           </div>
 
           <div id="active-beds-content" style="display:none;margin-top:32px;">
