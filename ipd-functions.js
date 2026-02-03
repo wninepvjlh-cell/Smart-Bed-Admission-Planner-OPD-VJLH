@@ -318,7 +318,7 @@ function calculateActiveBedsCountsForMonth(floor, year, month) {
     const admitDate = parseLocalDate(patient.admitted_date || patient.admit_date);
     if (!admitDate) return;
     if (!patientMap[hn]) patientMap[hn] = {};
-    // ถ้ามีหลาย admit ให้เลือก admit ที่เก่าที่สุด
+    // เก็บ admit ที่เก่าที่สุด (เพื่อรองรับ admit ก่อนเดือนนี้)
     if (!patientMap[hn].admit || admitDate < patientMap[hn].admit) {
       patientMap[hn].admit = admitDate;
     }
@@ -346,11 +346,11 @@ function calculateActiveBedsCountsForMonth(floor, year, month) {
     }
   });
   // ปรับสูตร: ถ้า discharge ในวันนั้น จะไม่นับในวันนั้นทันที
-  // 1. นับผู้ป่วยที่ admit ก่อนวันแรกของเดือนและยังไม่ discharge ก่อนวันแรก
+  // 1. นับผู้ป่วยที่ admit ก่อนวันแรกของเดือนและยังไม่ discharge ก่อนวันแรก (รองรับ admit ข้ามเดือน)
   const firstDay = new Date(year, month, 1);
   let runningTotal = 0;
   Object.values(patientMap).forEach(({ admit, discharge }) => {
-    if (admit && admit < firstDay && (!discharge || discharge >= firstDay)) {
+    if (admit && admit <= firstDay && (!discharge || discharge >= firstDay)) {
       runningTotal++;
     }
   });
@@ -368,9 +368,16 @@ function calculateActiveBedsCountsForMonth(floor, year, month) {
         dischargeToday++;
       }
     });
-    runningTotal += admitToday;
-    runningTotal -= dischargeToday;
-    counts[i] = runningTotal;
+    // วันแรกของเดือนต้องไม่บวก admit ซ้ำ (ถ้า admit = firstDay ให้บวกในวันแรก)
+    if (i === 0) {
+      runningTotal += admitToday;
+      runningTotal -= dischargeToday;
+      counts[i] = runningTotal;
+    } else {
+      runningTotal += admitToday;
+      runningTotal -= dischargeToday;
+      counts[i] = runningTotal;
+    }
   }
   return counts;
 }
