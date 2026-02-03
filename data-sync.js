@@ -3,12 +3,12 @@
     return;
   }
 
-  const DEFAULT_ENDPOINTS = {
-    booked: 'https://script.google.com/macros/s/AKfycbw2CG9_2tZaM_Ommt3Z2HPmPoFH_2_FNtr1oLlXMaA9CyAs3qiTBtODQ2YB74NQ_ujo5w/exec',
-    confirmed: 'https://script.google.com/macros/s/AKfycbx06ftWZO2wiPzDTFhMv7Vmnxh_PPqCcClx5d8gRoav9dvkikdX6ay1szCsD3bexx32eg/exec',
-    admitted: 'https://script.google.com/macros/s/AKfycbyAoKbR8wKXK2EjAI2pWBaSMgHJncB--7BKDmCRaVr_AbiKCkQ7BvhsehwH50gadJ0l/exec',
-    cancelled: 'https://script.google.com/macros/s/AKfycbzUNE6qd20_gSMMBu7vuoJH-23mmP3FX7SERAK1vze7mhzgh7ry3H2gsJMfZHWWbvl1ZQ/exec'
-  };
+  // const DEFAULT_ENDPOINTS = {
+  //   booked: 'https://script.google.com/macros/s/AKfycbw2CG9_2tZaM_Ommt3Z2HPmPoFH_2_FNtr1oLlXMaA9CyAs3qiTBtODQ2YB74NQ_ujo5w/exec',
+  //   confirmed: 'https://script.google.com/macros/s/AKfycbx06ftWZO2wiPzDTFhMv7Vmnxh_PPqCcClx5d8gRoav9dvkikdX6ay1szCsD3bexx32eg/exec',
+  //   admitted: 'https://script.google.com/macros/s/AKfycbyAoKbR8wKXK2EjAI2pWBaSMgHJncB--7BKDmCRaVr_AbiKCkQ7BvhsehwH50gadJ0l/exec',
+  //   cancelled: 'https://script.google.com/macros/s/AKfycbzUNE6qd20_gSMMBu7vuoJH-23mmP3FX7SERAK1vze7mhzgh7ry3H2gsJMfZHWWbvl1ZQ/exec'
+  // };
 
   const sheetEndpoints = Object.assign({}, DEFAULT_ENDPOINTS, window.SBPSheetEndpoints || {});
   window.SBPSheetEndpoints = sheetEndpoints;

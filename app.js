@@ -9,16 +9,16 @@
     window.__sbpDataPurge();
     return;
   }
-  const FLAG_KEY = 'sbp_data_purged_20260103';
-  const KEYS_TO_CLEAR = [
-    'bookingData',
-    'ipdData',
-    'ipd_female_standard_floor2',
-    'ipd_female_special_floor2',
-    'ipd_male_standard_floor2',
-    'ipd_male_special_floor2',
-    'ipd_active_beds_floor2'
-  ];
+  // const FLAG_KEY = 'sbp_data_purged_20260103';
+  // const KEYS_TO_CLEAR = [
+  //   'bookingData',
+  //   'ipdData',
+  //   'ipd_female_standard_floor2',
+  //   'ipd_female_special_floor2',
+  //   'ipd_male_standard_floor2',
+  //   'ipd_male_special_floor2',
+  //   'ipd_active_beds_floor2'
+  // ];
   window.__sbpDataPurge = function __sbpDataPurge() {
     if (typeof window === 'undefined' || !window.localStorage) {
       return;

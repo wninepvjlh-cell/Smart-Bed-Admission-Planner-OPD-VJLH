@@ -462,5 +462,27 @@
   <script src="google-sheet-config.js"></script>
   <!-- <script src="data-sync.js"></script> -->
   <script src="registry-functions.js"></script>
+  </script>
+  <script>
+  // Ensure calendar renders after DOM is loaded
+  document.addEventListener('DOMContentLoaded', function() {
+    if (typeof renderCalendar === 'function') {
+      try {
+        renderCalendar();
+      } catch (e) {
+        // Show empty calendar if error
+        var calendarDiv = document.getElementById('booking-calendar');
+        var calendarEmptyMsg = document.getElementById('calendar-empty-message');
+        if (calendarDiv && calendarEmptyMsg) {
+          calendarDiv.innerHTML = '';
+          calendarDiv.appendChild(calendarEmptyMsg);
+          calendarEmptyMsg.style.display = 'block';
+          calendarEmptyMsg.textContent = 'ไม่สามารถโหลดปฏิทินได้';
+        }
+        console.error('Calendar render error:', e);
+      }
+    }
+  });
+  </script>
  </body>
 </html>

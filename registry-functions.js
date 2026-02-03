@@ -209,7 +209,8 @@ function canAdmitToday(admitDateString) {
 function displayBookingList() {
   // แสดงเฉพาะเคสที่ยังไม่ได้กดโทร (call_result !== 'confirmed' และ called !== true)
   const bookingData = loadBookingData();
-  const bookedList = (bookingData.booked || []).filter(b => b.call_result !== 'confirmed' && b.called !== true);
+  // Exclude postponed cases from Booking list
+  const bookedList = (bookingData.booked || []).filter(b => b.call_result !== 'confirmed' && b.called !== true && !b.postponed && !b.is_postponed);
   renderCalendar(bookedList);
 }
 
@@ -230,24 +231,29 @@ function changeMonth(offset) {
 function renderCalendar() {
   // รับ bookedList จาก displayBookingList (เฉพาะเคสที่ยังไม่ได้กดโทร)
   let bookedList = arguments.length > 0 ? arguments[0] : null;
-  const bookingData = loadBookingData();
+  let bookingData = {};
+  try {
+    bookingData = loadBookingData() || {};
+  } catch (e) {
+    bookingData = { booked: [], confirmed: [], admitted: [], cancelled: [] };
+  }
   if (!bookedList) {
-    bookedList = bookingData.booked || [];
+    bookedList = (bookingData.booked && Array.isArray(bookingData.booked)) ? bookingData.booked : [];
   }
   // รวมเคสที่เลื่อนนัด (postponed) จาก confirmed ด้วย
-  const postponedConfirmed = (bookingData.confirmed || []).filter(b => b.postponed || b.is_postponed);
+  const postponedConfirmed = (bookingData.confirmed && Array.isArray(bookingData.confirmed)) ? bookingData.confirmed.filter(b => b.postponed || b.is_postponed) : [];
   // เฉพาะเคสที่ admit_date อยู่ในเดือน/ปีนี้
   const postponedForMonth = postponedConfirmed.filter(b => {
     const admitDate = new Date(b.admit_date);
     return admitDate.getMonth() === currentMonth && admitDate.getFullYear() === currentYear;
   });
-  // รวมทั้งหมดสำหรับปฏิทิน
-  const allForCalendar = [...bookedList, ...postponedForMonth];
+  // Show only true Booking cases in Booking tab calendar
+  const allForCalendar = [...bookedList];
   const emptyState = document.getElementById('booking-empty-state');
-  
   // Update month/year display
-  document.getElementById('current-month-year').textContent = 
-    `${thaiMonths[currentMonth]} ${currentYear + 543}`;
+  if (document.getElementById('current-month-year')) {
+    document.getElementById('current-month-year').textContent = `${thaiMonths[currentMonth]} ${currentYear + 543}`;
+  }
   
   // Get first day of month and number of days
   const firstDay = new Date(currentYear, currentMonth, 1).getDay();
@@ -548,9 +554,9 @@ function openCallModalFromDetail() {
 // Display confirmed booking list
 function displayConfirmedList() {
   const bookingData = loadBookingData();
-  // Booking Confirmed: แสดงเฉพาะผู้ที่ถูกกดโทร (call_result === 'confirmed' หรือ called === true) และไม่ใช่ postponed
-  // Show only confirmed cases that are not postponed (postponed === true)
-  const confirmedList = (bookingData.confirmed || []).filter(b => (b.call_result === 'confirmed' || b.called === true) && (!b.postponed || b.postponed === false));
+  // Booking Confirmed: แสดงผู้ที่ถูกกดโทร (call_result === 'confirmed' หรือ called === true) ทั้งหมด รวม postponed ด้วย
+  // Show all cases in confirmed (including postponed, even if not yet called)
+  const confirmedList = (bookingData.confirmed || []);
   
   const container = document.getElementById('confirmed-list');
   const confirmedCount = document.getElementById('confirmed-count');
@@ -720,53 +726,66 @@ function saveCallConfirmation() {
   console.log('Note:', note);
   console.log('Logged user:', loggedUser);
   
-  const bookingData = loadBookingData();
-  console.log('bookingData:', bookingData);
-  console.log('booked array:', bookingData.booked);
-  
-  // เปรียบเทียบ HN แบบ robust
+  let bookingData = loadBookingData() || {};
+  // Ensure all lists exist
+  if (!Array.isArray(bookingData.booked)) bookingData.booked = [];
+  if (!Array.isArray(bookingData.confirmed)) bookingData.confirmed = [];
+  if (!Array.isArray(bookingData.postponed)) bookingData.postponed = [];
+
   const hnTarget = (currentCallPatient || '').toString().trim();
-  const bookedIndex = bookingData.booked.findIndex(p => (p.patient_hn || '').toString().trim() === hnTarget);
-  const postponedIndex = bookingData.postponed && Array.isArray(bookingData.postponed)
-    ? bookingData.postponed.findIndex(p => (p.patient_hn || '').toString().trim() === hnTarget)
-    : -1;
+  // Find patient BEFORE removing from lists
   let patient = null;
-  if (bookedIndex !== -1) {
-    patient = bookingData.booked[bookedIndex];
-  } else if (postponedIndex !== -1) {
-    patient = bookingData.postponed[postponedIndex];
+  const bookedPatient = bookingData.booked.find(p => (p.patient_hn || '').toString().trim() === hnTarget);
+  const postponedPatient = bookingData.postponed.find(p => (p.patient_hn || '').toString().trim() === hnTarget);
+  // Also check for postponed in confirmed
+  const confirmedPostponedPatient = bookingData.confirmed.find(p => (p.patient_hn || '').toString().trim() === hnTarget && (p.postponed || p.is_postponed));
+  if (bookedPatient) {
+    patient = bookedPatient;
+  } else if (postponedPatient) {
+    patient = postponedPatient;
+  } else if (confirmedPostponedPatient) {
+    patient = confirmedPostponedPatient;
+  } else {
+    // fallback: try to get from previous confirmed (if rescheduled)
+    patient = bookingData.confirmed.find(p => (p.patient_hn || '').toString().trim() === hnTarget) || { patient_hn: hnTarget, patient_name: '' };
   }
   if (!patient) {
     alert('ไม่พบข้อมูลผู้ป่วย');
     return;
   }
+  // Remove any stale entries for this HN in all lists before confirming
+  // Robustly remove all entries with matching HN from booked and postponed
+  bookingData.booked = bookingData.booked.filter(p => ((p.patient_hn || '').toString().trim() !== hnTarget));
+  if (bookingData.postponed && Array.isArray(bookingData.postponed)) {
+    bookingData.postponed = bookingData.postponed.filter(p => ((p.patient_hn || '').toString().trim() !== hnTarget));
+  }
+  bookingData.confirmed = bookingData.confirmed.filter(p => ((p.patient_hn || '').toString().trim() !== hnTarget));
+
   // Move to confirmed list
+  // If patient was postponed, preserve postpone info
   const confirmedPatient = {
     ...patient,
     call_result: 'confirmed',
     call_note: note,
     confirm_date: new Date().toISOString(),
     confirmed_by: loggedUser,
-    action_note: `โทรยืนยันโดย ${loggedUser}`
+    action_note: `โทรยืนยันโดย ${loggedUser}`,
+    // Preserve postpone info if present
+    postponed: patient.postponed || false,
+    is_postponed: patient.is_postponed || false,
+    postpone_reason: patient.postpone_reason || '',
+    postpone_original_date: patient.postpone_original_date || '',
+    postpone_date: patient.postpone_date || '',
+    postponed_by: patient.postponed_by || ''
   };
-  if (!bookingData.confirmed) {
-    bookingData.confirmed = [];
-  }
-  // Only add if not already in confirmed
-  if (!bookingData.confirmed.some(p => (p.patient_hn || '').toString().trim() === hnTarget)) {
-    bookingData.confirmed.push(confirmedPatient);
-  }
-  // Remove from previous list
-  if (bookedIndex !== -1) bookingData.booked.splice(bookedIndex, 1);
-  if (postponedIndex !== -1) bookingData.postponed.splice(postponedIndex, 1);
+  bookingData.confirmed.push(confirmedPatient);
   localStorage.setItem('bookingData', JSON.stringify(bookingData));
   alert(`✅ ยืนยันการโทร ${patient.patient_name}\n\nข้อมูลถูกย้ายไปที่ \"Booking Confirmed\" แล้ว`);
   closeCallModal();
   if (document.getElementById('booking-detail-modal').style.display === 'flex') {
     closeBookingDetailModal();
   }
-  displayBookingList();
-  displayConfirmedList();
+  // Switch to Booking Confirmed tab and refresh only that list
   showRegistryTab('confirmed');
 }
 
@@ -1179,10 +1198,16 @@ function confirmPostponeBooking() {
   if (confirmedIndex !== -1) {
     patient = bookingData.confirmed.splice(confirmedIndex, 1)[0];
   }
-  // Remove from booked (robust string match)
-  let bookedIndex = bookingData.booked.findIndex(p => (p.patient_hn || '').toString().trim() === hn);
-  if (bookedIndex !== -1) {
-    patient = bookingData.booked.splice(bookedIndex, 1)[0];
+  // Remove ALL from booked (robust string match, in case of duplicates)
+  let bookedPatient = null;
+  bookingData.booked = bookingData.booked.filter(p => {
+    const match = (p.patient_hn || '').toString().trim() === hn;
+    if (match) bookedPatient = p;
+    return !match;
+  });
+  // If not found in confirmed, use from booked
+  if (!patient && bookedPatient) {
+    patient = bookedPatient;
   }
   if (!patient) {
     alert('ไม่พบข้อมูลผู้ป่วย');
