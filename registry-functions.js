@@ -724,17 +724,22 @@ function saveCallConfirmation() {
   console.log('bookingData:', bookingData);
   console.log('booked array:', bookingData.booked);
   
-  const bookedIndex = bookingData.booked.findIndex(p => p.patient_hn === currentCallPatient);
-  console.log('bookedIndex:', bookedIndex);
-  
-  if (bookedIndex === -1) {
+  // เปรียบเทียบ HN แบบ robust
+  const hnTarget = (currentCallPatient || '').toString().trim();
+  const bookedIndex = bookingData.booked.findIndex(p => (p.patient_hn || '').toString().trim() === hnTarget);
+  const postponedIndex = bookingData.postponed && Array.isArray(bookingData.postponed)
+    ? bookingData.postponed.findIndex(p => (p.patient_hn || '').toString().trim() === hnTarget)
+    : -1;
+  let patient = null;
+  if (bookedIndex !== -1) {
+    patient = bookingData.booked[bookedIndex];
+  } else if (postponedIndex !== -1) {
+    patient = bookingData.postponed[postponedIndex];
+  }
+  if (!patient) {
     alert('ไม่พบข้อมูลผู้ป่วย');
     return;
   }
-  
-  const patient = bookingData.booked[bookedIndex];
-  console.log('Patient found:', patient);
-  
   // Move to confirmed list
   const confirmedPatient = {
     ...patient,
@@ -744,35 +749,24 @@ function saveCallConfirmation() {
     confirmed_by: loggedUser,
     action_note: `โทรยืนยันโดย ${loggedUser}`
   };
-  
-  console.log('Confirmed patient:', confirmedPatient);
-  
   if (!bookingData.confirmed) {
     bookingData.confirmed = [];
   }
-  
-  bookingData.confirmed.push(confirmedPatient);
-  bookingData.booked.splice(bookedIndex, 1);
-  
-  console.log('After move - booked:', bookingData.booked);
-  console.log('After move - confirmed:', bookingData.confirmed);
-  
+  // Only add if not already in confirmed
+  if (!bookingData.confirmed.some(p => (p.patient_hn || '').toString().trim() === hnTarget)) {
+    bookingData.confirmed.push(confirmedPatient);
+  }
+  // Remove from previous list
+  if (bookedIndex !== -1) bookingData.booked.splice(bookedIndex, 1);
+  if (postponedIndex !== -1) bookingData.postponed.splice(postponedIndex, 1);
   localStorage.setItem('bookingData', JSON.stringify(bookingData));
-  console.log('Saved to localStorage');
-  
-  alert(`✅ ยืนยันการโทร ${patient.patient_name}\n\nข้อมูลถูกย้ายไปที่ "Booking Confirmed" แล้ว`);
-  
+  alert(`✅ ยืนยันการโทร ${patient.patient_name}\n\nข้อมูลถูกย้ายไปที่ \"Booking Confirmed\" แล้ว`);
   closeCallModal();
-  
-  // Close detail modal if open
   if (document.getElementById('booking-detail-modal').style.display === 'flex') {
     closeBookingDetailModal();
   }
-  
   displayBookingList();
   displayConfirmedList();
-  
-  // Auto-switch to Booking Confirmed tab
   showRegistryTab('confirmed');
 }
 
