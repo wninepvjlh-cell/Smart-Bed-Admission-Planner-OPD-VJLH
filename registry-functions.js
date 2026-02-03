@@ -230,12 +230,19 @@ function changeMonth(offset) {
 function renderCalendar() {
   // รับ bookedList จาก displayBookingList (เฉพาะเคสที่ยังไม่ได้กดโทร)
   let bookedList = arguments.length > 0 ? arguments[0] : null;
+  const bookingData = loadBookingData();
   if (!bookedList) {
-    const bookingData = loadBookingData();
     bookedList = bookingData.booked || [];
   }
-  // ไม่รวม confirmed ในหน้า Booking/ปฏิทิน
-  const allForCalendar = bookedList;
+  // รวมเคสที่เลื่อนนัด (postponed) จาก confirmed ด้วย
+  const postponedConfirmed = (bookingData.confirmed || []).filter(b => b.postponed || b.is_postponed);
+  // เฉพาะเคสที่ admit_date อยู่ในเดือน/ปีนี้
+  const postponedForMonth = postponedConfirmed.filter(b => {
+    const admitDate = new Date(b.admit_date);
+    return admitDate.getMonth() === currentMonth && admitDate.getFullYear() === currentYear;
+  });
+  // รวมทั้งหมดสำหรับปฏิทิน
+  const allForCalendar = [...bookedList, ...postponedForMonth];
   const emptyState = document.getElementById('booking-empty-state');
   
   // Update month/year display
