@@ -183,8 +183,13 @@ function calculateActiveBedsCountsForMonth(floor, year, month) {
   const admitPerDay = new Array(daysInMonth).fill(0);
   const dischargePerDay = new Array(daysInMonth).fill(0);
   const bookingData = JSON.parse(localStorage.getItem('bookingData')) || {};
-  const admitted = Array.isArray(bookingData.admitted) ? bookingData.admitted : [];
-  const discharged = Array.isArray(bookingData.discharged) ? bookingData.discharged : [];
+  // Filter only admitted patients for the correct floor and status
+  const admitted = Array.isArray(bookingData.admitted)
+    ? bookingData.admitted.filter(p => p.floor === 'floor2' && p.admit_status === 'admitted')
+    : [];
+  const discharged = Array.isArray(bookingData.discharged)
+    ? bookingData.discharged.filter(p => p.floor === 'floor2' && p.admit_status === 'admitted')
+    : [];
   // Helper: robust floor check
   function matchFloor(patient, floor) {
     const f = String(floor);
@@ -293,20 +298,23 @@ function buildActiveBedsCalendarGrid(year, month, counts) {
 
   for (let day = 1; day <= counts.length; day++) {
     const count = typeof counts[day - 1] === 'number' ? counts[day - 1] : 0;
-    const intensity = maxCount > 0 ? count / maxCount : 0;
-    const baseBg = count > 0
+    const cellDate = new Date(year, month, day);
+    const isPastOrToday = cellDate <= today;
+    const showCount = isPastOrToday ? count : '';
+    const intensity = maxCount > 0 && isPastOrToday ? count / maxCount : 0;
+    const baseBg = isPastOrToday && count > 0
       ? `linear-gradient(135deg, rgba(178,235,242,${0.35 + intensity * 0.4}) 0%, rgba(129,199,132,${0.3 + intensity * 0.45}) 100%)`
       : 'linear-gradient(135deg, rgba(245,247,250,0.9) 0%, rgba(236,239,241,0.9) 100%)';
     const border = (todayYear === year && todayMonth === month && todayDate === day)
       ? '2px solid rgba(38,166,154,0.9)'
       : '1px solid rgba(0,150,136,0.12)';
-    const dayColor = count > 0 ? '#006064' : '#90a4ae';
-    const countColor = count > 0 ? '#004d40' : '#b0bec5';
-    const countFontSize = count > 0 ? '1.4rem' : '1.1rem';
-    html += `<div style="min-height:96px;padding:12px;border-radius:14px;display:flex;flex-direction:column;box-shadow:0 6px 18px rgba(0,150,136,${count>0?0.14:0.05});background:${baseBg};border:${border};">
+    const dayColor = isPastOrToday && count > 0 ? '#006064' : '#90a4ae';
+    const countColor = isPastOrToday && count > 0 ? '#004d40' : '#b0bec5';
+    const countFontSize = isPastOrToday && count > 0 ? '1.4rem' : '1.1rem';
+    html += `<div style="min-height:96px;padding:12px;border-radius:14px;display:flex;flex-direction:column;box-shadow:0 6px 18px rgba(0,150,136,${isPastOrToday&&count>0?0.14:0.05});background:${baseBg};border:${border};">
       <div style="font-size:0.95rem;font-weight:700;color:${dayColor};">${day}</div>
-      <div style="margin-top:4px;font-size:0.75rem;color:${dayColor};opacity:0.8;">จำนวนผู้ป่วย</div>
-      <div style="margin-top:auto;font-size:${countFontSize};font-weight:700;color:${countColor};">${count}</div>
+      <div style="margin-top:4px;font-size:0.75rem;color:${dayColor};opacity:0.8;">Active Beds</div>
+      <div style="margin-top:auto;font-size:${countFontSize};font-weight:700;color:${countColor};">${showCount !== '' ? showCount : '-'}</div>
     </div>`;
   }
 
@@ -629,13 +637,24 @@ function openAdmitModal(button) {
 
   const card = button.closest('div');
   const patientName = card.querySelector('p:nth-child(2)').textContent;
+  const patientHN = card.querySelector('div[style*="HN:"]')?.textContent?.replace(/[^0-9A-Za-z]/g, '').trim();
   const bookingData = JSON.parse(localStorage.getItem('bookingData')) || { booked: [], admitted: [] };
 
-  // Find the patient from admitted list with waiting status
-  const patient = bookingData.admitted.find(p =>
-    p.patient_name === patientName &&
-    p.admit_status === 'waiting'
-  );
+  // Find the patient from admitted list with waiting status, match by HN if possible
+  let patient = null;
+  if (patientHN) {
+    patient = bookingData.admitted.find(p =>
+      p.patient_hn && p.patient_hn.toString().trim() === patientHN &&
+      p.admit_status === 'waiting'
+    );
+  }
+  // Fallback: match by name if HN not found
+  if (!patient) {
+    patient = bookingData.admitted.find(p =>
+      p.patient_name === patientName &&
+      p.admit_status === 'waiting'
+    );
+  }
 
   if (!patient) {
     alert('ไม่พบข้อมูลผู้ป่วย');
