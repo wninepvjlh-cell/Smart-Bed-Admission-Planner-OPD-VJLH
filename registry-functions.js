@@ -549,7 +549,8 @@ function openCallModalFromDetail() {
 function displayConfirmedList() {
   const bookingData = loadBookingData();
   // Booking Confirmed: แสดงเฉพาะผู้ที่ถูกกดโทร (call_result === 'confirmed' หรือ called === true) และไม่ใช่ postponed
-  const confirmedList = (bookingData.confirmed || []).filter(b => (b.call_result === 'confirmed' || b.called === true) && !b.postponed);
+  // Show only confirmed cases that are not postponed (postponed === true)
+  const confirmedList = (bookingData.confirmed || []).filter(b => (b.call_result === 'confirmed' || b.called === true) && (!b.postponed || b.postponed === false));
   
   const container = document.getElementById('confirmed-list');
   const confirmedCount = document.getElementById('confirmed-count');
