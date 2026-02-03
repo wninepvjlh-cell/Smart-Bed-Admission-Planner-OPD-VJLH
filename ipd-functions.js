@@ -8,19 +8,51 @@ window.showIPDFloor = function showIPDFloor(floor) {
   const activeBedsContent = document.getElementById('active-beds-content');
 
   // Reset all
+  // (ลบโค้ดที่อ้างอิง statusValue ที่ไม่มีอยู่จริง)
+  // ปุ่มและเนื้อหาชั้น 1/2/Active Beds ทำงานปกติ
   if (activeBedsBtn) {
+    activeBedsBtn.style.background = 'white';
+    activeBedsBtn.style.borderColor = '#bdbdbd';
+    activeBedsBtn.style.color = '#00796b';
+    activeBedsBtn.style.boxShadow = 'none';
+    activeBedsBtn.style.fontWeight = '600';
   }
-  if (statusValue === 'admitted' ||
-      statusValue === 'admit' ||
-      statusValue === 'ipd' ||
-      statusValue === 'inward' ||
-      statusValue === 'in ward') {
-    return true;
+  if (activeBedsContent) {
+    activeBedsContent.style.display = 'none';
   }
-  if (statusValue.startsWith('admitted')) {
-    return true;
+  if (floor === 1) {
+    if (floor1Btn) {
+      floor1Btn.style.background = 'linear-gradient(135deg, #b2ebf2 0%, #c8e6c9 100%)';
+      floor1Btn.style.borderColor = '#4dd0e1';
+      floor1Btn.style.color = '#00796b';
+      floor1Btn.style.fontWeight = '600';
+    }
+    if (floor2Btn) {
+      floor2Btn.style.background = 'white';
+      floor2Btn.style.borderColor = '#ddd';
+      floor2Btn.style.color = '#999';
+      floor2Btn.style.fontWeight = '500';
+    }
+    if (floor1Content) floor1Content.style.display = 'block';
+    if (floor2Content) floor2Content.style.display = 'none';
+    // loadIPDFloor(1); // ถ้ามีฟังก์ชันนี้ให้เรียกใช้งาน
+  } else {
+    if (floor2Btn) {
+      floor2Btn.style.background = 'linear-gradient(135deg, #b2ebf2 0%, #c8e6c9 100%)';
+      floor2Btn.style.borderColor = '#4dd0e1';
+      floor2Btn.style.color = '#00796b';
+      floor2Btn.style.fontWeight = '600';
+    }
+    if (floor1Btn) {
+      floor1Btn.style.background = 'white';
+      floor1Btn.style.borderColor = '#ddd';
+      floor1Btn.style.color = '#999';
+      floor1Btn.style.fontWeight = '500';
+    }
+    if (floor1Content) floor1Content.style.display = 'none';
+    if (floor2Content) floor2Content.style.display = 'block';
+    // loadIPDFloor(2); // ถ้ามีฟังก์ชันนี้ให้เรียกใช้งาน
   }
-  return statusValue.startsWith('admit') && !statusValue.includes('waiting');
 }
 
 // --- Helper: Calculate IMC/Non-IMC by Disease Group for floor2 (for Dashboard sync) ---
