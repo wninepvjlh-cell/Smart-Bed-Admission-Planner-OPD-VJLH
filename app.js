@@ -952,7 +952,18 @@ async function saveCallConfirm(backendId) {
   const saveButton = document.getElementById('save-call-confirm-btn');
   if (saveButton) { saveButton.disabled = true; saveButton.textContent = 'กำลังบันทึก...'; }
 
-  const updatedBooking = { ...booking, call_status: callStatus, call_notes: callNotes };
+  // If this is a rescheduled admit (custom logic: e.g., booking.rescheduled === true or booking.booking_status === 'rescheduled'),
+  // and the call is confirmed, update booking_status to 'booked' and clear transfer_status if needed.
+  let updatedBooking = { ...booking, call_status: callStatus, call_notes: callNotes };
+
+  // Example logic: if booking_status is 'rescheduled' or has a reschedule flag, treat as rescheduled
+  if ((booking.booking_status === 'rescheduled' || booking.rescheduled === true) && callStatus === 'รับสาย') {
+    updatedBooking.booking_status = 'booked';
+    // Optionally clear transfer_status if it blocks showing in confirmed
+    if (updatedBooking.transfer_status === 'waiting') {
+      updatedBooking.transfer_status = '';
+    }
+  }
 
   const result = (window.dataSdk && window.dataSdk.update) ? await window.dataSdk.update(updatedBooking) : { isOk: true };
 
