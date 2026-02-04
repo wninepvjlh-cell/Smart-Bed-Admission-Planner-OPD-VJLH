@@ -69,16 +69,44 @@ function rescheduleConfirmedBooking(bookingId, newFormData) {
   }
   // Remove from confirmed
   const [booking] = bookingData.confirmed.splice(idx, 1);
-  // Add to booked with updated info
+  // Add to booked with updated info, set call_confirmed to false
   const newBooking = {
     ...booking,
     ...newFormData,
     status: 'booked',
     rescheduled_from: booking.id,
     booking_date: new Date().toISOString(),
-    action_note: `เลื่อนนัดจาก Booking Confirmed โดย ${sessionStorage.getItem('app_user_name') || 'Unknown'}`
+    action_note: `เลื่อนนัดจาก Booking Confirmed โดย ${sessionStorage.getItem('app_user_name') || 'Unknown'}`,
+    call_confirmed: false // must be called before moving to confirmed
   };
   bookingData.booked.push(newBooking);
+  // Confirm call for a rescheduled booking and move to confirmed
+  function confirmCallAndMoveToConfirmed(bookingId) {
+    const bookingData = JSON.parse(localStorage.getItem('bookingData')) || { booked: [], confirmed: [], admitted: [] };
+    const idx = bookingData.booked.findIndex(b => b.id === bookingId && b.rescheduled_from);
+    if (idx === -1) {
+      alert('ไม่พบข้อมูลการจองที่ต้องการยืนยันการโทร');
+      return false;
+    }
+    const booking = bookingData.booked[idx];
+    // Mark as call confirmed
+    booking.call_confirmed = true;
+    // Move to confirmed
+    const confirmTimestamp = new Date().toISOString();
+    const confirmedRecord = {
+      ...booking,
+      status: 'confirmed',
+      confirm_date: confirmTimestamp,
+      action_note: `ยืนยันการโทรและย้ายไป Booking Confirmed โดย ${sessionStorage.getItem('app_user_name') || 'Unknown'}`
+    };
+    bookingData.booked.splice(idx, 1);
+    bookingData.confirmed.push(confirmedRecord);
+    localStorage.setItem('bookingData', JSON.stringify(bookingData));
+    window.dispatchEvent(new Event('storage'));
+    updateBookedListDisplay && updateBookedListDisplay();
+    alert('ยืนยันการโทรและย้ายไป Booking Confirmed สำเร็จ');
+    return true;
+  }
   // Save
   localStorage.setItem('bookingData', JSON.stringify(bookingData));
   // Trigger storage event manually for same-tab update
@@ -780,3 +808,4 @@ window.handleBookingSubmit = handleBookingSubmit;
 window.exportBookingDataAsJSON = exportBookingDataAsJSON;
 window.triggerBookingJSONImport = triggerBookingJSONImport;
 window.handleBookingJSONImport = handleBookingJSONImport;
+window.confirmCallAndMoveToConfirmed = confirmCallAndMoveToConfirmed;

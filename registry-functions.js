@@ -209,9 +209,14 @@ function canAdmitToday(admitDateString) {
 function displayBookingList() {
   // แสดงเฉพาะเคสที่ยังไม่ได้กดโทร (call_result !== 'confirmed' และ called !== true)
   const bookingData = loadBookingData();
-  // Exclude postponed cases from Booking list
+  // Exclude postponed cases from Booking list (for table), but for calendar we want to show postponed too
   const bookedList = (bookingData.booked || []).filter(b => b.call_result !== 'confirmed' && b.called !== true && !b.postponed && !b.is_postponed);
-  renderCalendar(bookedList);
+
+  // Include postponed (rescheduled) cases from confirmed for calendar
+  const postponedConfirmed = (bookingData.confirmed && Array.isArray(bookingData.confirmed)) ? bookingData.confirmed.filter(b => b.postponed || b.is_postponed) : [];
+  // Merge bookedList and postponedConfirmed for calendar
+  const allForCalendar = [...bookedList, ...postponedConfirmed];
+  renderCalendar(allForCalendar);
 }
 
 // Change month

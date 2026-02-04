@@ -365,6 +365,10 @@
                     filtered.forEach(function renderRow(patient, idx) {
                         const tr = document.createElement('tr');
                         const dateStr = patient.created_date || patient.booking_date || '';
+                        let callConfirmBtn = '';
+                        if (patient.rescheduled_from && !patient.call_confirmed) {
+                          callConfirmBtn = `<button onclick="confirmCallAndMoveToConfirmed('${patient.id}')" style="padding:6px 10px;background:#43a047;color:white;border:none;border-radius:6px;cursor:pointer;font-size:13px;margin-bottom:4px;">ยืนยันโทรแล้ว</button><br/>`;
+                        }
                         tr.innerHTML = `
                             <td style="padding:8px;text-align:center;">${formatDateTH(dateStr)}</td>
                             <td style="padding:8px;text-align:center;">${patient.patient_hn || '-'}</td>
@@ -380,6 +384,7 @@
                             <td style="padding:8px;text-align:center;">${patient.lab_package || '-'}</td>
                             <td style="padding:8px;text-align:center;">${patient.appointment_channel || '-'}</td>
                             <td style="padding:8px;text-align:center;">
+                                ${callConfirmBtn}
                                 <button onclick="showBookingDetail(${idx})" style="padding:6px 14px;background:#4dd0e1;color:white;border:none;border-radius:6px;cursor:pointer;font-size:13px;">ดูรายละเอียด</button>
                             </td>
                         `;
