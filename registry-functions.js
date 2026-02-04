@@ -209,13 +209,11 @@ function canAdmitToday(admitDateString) {
 function displayBookingList() {
   // แสดงเฉพาะเคสที่ยังไม่ได้กดโทร (call_result !== 'confirmed' และ called !== true)
   const bookingData = loadBookingData();
-  // Exclude postponed cases from Booking list (for table), but for calendar we want to show postponed too
-  const bookedList = (bookingData.booked || []).filter(b => b.call_result !== 'confirmed' && b.called !== true && !b.postponed && !b.is_postponed);
+  // แสดงผู้ป่วยที่ยังไม่ได้โทรยืนยัน (รวมเลื่อนนัดด้วย) เฉพาะที่ยังไม่ confirmed
+  const bookedList = (bookingData.booked || []).filter(b => !b.call_confirmed && b.status !== 'confirmed' && b.call_result !== 'confirmed' && b.called !== true);
 
-  // Include postponed (rescheduled) cases from confirmed for calendar
-  const postponedConfirmed = (bookingData.confirmed && Array.isArray(bookingData.confirmed)) ? bookingData.confirmed.filter(b => b.postponed || b.is_postponed) : [];
-  // Merge bookedList and postponedConfirmed for calendar
-  const allForCalendar = [...bookedList, ...postponedConfirmed];
+  // Do NOT include postponedConfirmed in calendar if already confirmed or called
+  const allForCalendar = [...bookedList];
   renderCalendar(allForCalendar);
 }
 
@@ -1230,10 +1228,26 @@ function confirmPostponeBooking() {
   patient.postponed = true; // Set flag for postponed status
   patient.postponed_by = loggedUser;
 
-  // Always move to confirmed list (prevent duplicates)
-  if (!bookingData.confirmed.some(p => (p.patient_hn || '').toString().trim() === hn)) {
-    bookingData.confirmed.push(patient);
-  }
+
+  // เพิ่มเข้า booked (ไม่ใช่ confirmed) และตั้ง flag รอ call_confirmed
+  const rescheduledBooking = {
+    ...patient,
+    admit_date: newDate,
+    postpone_original_date: originalDate,
+    postpone_reason: reason,
+    postpone_date: new Date().toISOString(),
+    postponed: true,
+    postponed_by: loggedUser,
+    rescheduled_from: patient.id || null,
+    status: 'booked',
+    call_confirmed: false
+  };
+  // ลบจาก confirmed/postponed เดิม (ถ้ามี)
+  bookingData.booked = bookingData.booked.filter(p => (p.patient_hn || '').toString().trim() !== hn);
+  bookingData.confirmed = bookingData.confirmed.filter(p => (p.patient_hn || '').toString().trim() !== hn);
+  bookingData.postponed = bookingData.postponed ? bookingData.postponed.filter(p => (p.patient_hn || '').toString().trim() !== hn) : [];
+  // เพิ่มเข้า booked
+  bookingData.booked.push(rescheduledBooking);
 
   localStorage.setItem('bookingData', JSON.stringify(bookingData));
 
