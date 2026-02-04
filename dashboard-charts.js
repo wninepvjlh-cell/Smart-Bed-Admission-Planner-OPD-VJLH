@@ -1,3 +1,19 @@
+// For IMC : Non-IMC Ratio (Admitted) bar chart in dashboard.html
+function getIMCNonIMCByDiseaseFloor2() {
+  // 6 groups: Stroke, SCI (Tetraplegia), SCI (Paraplegia), TBI, Hip fracture, อื่นๆ
+  const imc = [0, 0, 0, 0, 0, 0];
+  const nonimc = [0, 0, 0, 0, 0, 0];
+  const patients = getAdmittedPatientsFloor2();
+  patients.forEach(p => {
+    const idx = getDiseaseGroupIndex(p.diagnosis);
+    if (getIMCStatus(p)) {
+      imc[idx]++;
+    } else {
+      nonimc[idx]++;
+    }
+  });
+  return { imc, nonimc };
+}
 // Pie Chart: 6 กลุ่มโรคหลัก Admit ชั้น 2 (ใช้ข้อมูลจริง)
 const pieLabels = [
   'Stroke',
