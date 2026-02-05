@@ -14,6 +14,18 @@
 </head>
 <body>
   <button type="button" id="logoutBtn" class="logout-button">Logout</button>
+  <script>
+    // Logout button: clear user_role and redirect to login page
+    document.addEventListener('DOMContentLoaded', function() {
+      var logoutBtn = document.getElementById('logoutBtn');
+      if (logoutBtn) {
+        logoutBtn.addEventListener('click', function() {
+          localStorage.removeItem('user_role');
+          window.location.href = 'login.html';
+        });
+      }
+    });
+  </script>
   <header style="background: linear-gradient(135deg, #80deea 0%, #81c784 100%); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);">
     <div style="padding: 24px; text-align: center;">
       <h1 style="font-size: 2.2rem; font-weight: 600; color: white; margin: 0;">Smart Bed Admission Planner</h1>
@@ -23,16 +35,43 @@
   </header>
   <nav style="background: white; padding: 16px 24px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); width: 100%; margin-bottom: 0;">
     <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
-      <div style="display:flex; gap:12px; flex-wrap:wrap; justify-content:center; flex:1 1 auto;">
-        <a class="nav-button" href="dashboard.html" style="padding: 10px 20px; border-radius: 8px; background: linear-gradient(135deg,#4dd0e1 0%,#26c6da 100%); font-size: 15px; font-weight: 600; color: white; text-decoration: none; box-shadow: 0 4px 12px rgba(77,208,225,0.25);">Dashboard</a>
-        <a class="nav-button" href="predict.html" style="padding: 10px 20px; border-radius: 8px; background: white; font-size: 15px; font-weight: 500; color: #00796b;">คาดการณ์วัน Admit เร็วสุด</a>
-        <a class="nav-button" href="booking.html" style="padding: 10px 20px; border-radius: 8px; background: white; font-size: 15px; font-weight: 500; color: #00796b; text-decoration: none;">จองเตียง Admit</a>
-        <a class="nav-button" href="registry.html" style="padding: 10px 20px; border-radius: 8px; background: white; font-size: 15px; font-weight: 500; color: #00796b;">ทะเบียนจองเตียง</a>
-        <a class="nav-button" href="ipd.html" style="padding: 10px 20px; border-radius: 8px; background: white; font-size: 15px; font-weight: 500; color: #00796b;">หอผู้ป่วยใน(IPD)</a>
-        <a class="nav-button" href="data-archive.html" style="padding: 10px 20px; border-radius: 8px; background: white; font-size: 15px; font-weight: 500; color: #00796b;">คลังข้อมูล</a>
+      <div id="main-menu-bar" style="display:flex; gap:12px; flex-wrap:wrap; justify-content:center; flex:1 1 auto;">
+        <!-- Menu will be rendered by JS -->
       </div>
     </div>
-  </nav>
+    <script>
+      // Render main menu based on user role (run ASAP to prevent menu flash)
+      (function renderMainMenuBarImmediate() {
+        const menuBar = document.getElementById('main-menu-bar');
+        if (!menuBar) return;
+        let role = localStorage.getItem('user_role');
+        if (!role) {
+          const params = new URLSearchParams(window.location.search);
+          if (params.has('role')) {
+            role = params.get('role');
+            localStorage.setItem('user_role', role);
+          }
+        }
+        let menu = [
+          { href: 'dashboard.html', label: 'Dashboard', active: true },
+          { href: 'predict.html', label: 'คาดการณ์วัน Admit เร็วสุด' },
+          { href: 'booking.html', label: 'จองเตียง Admit' },
+          { href: 'registry.html', label: 'ทะเบียนจองเตียง' },
+          { href: 'ipd.html', label: 'หอผู้ป่วยใน(IPD)' },
+          { href: 'data-archive.html', label: 'คลังข้อมูล' }
+        ];
+        if (role === 'nurseipd') {
+          menu = [
+            { href: 'dashboard.html', label: 'Dashboard', active: true },
+            { href: 'ipd.html', label: 'หอผู้ป่วยใน(IPD)' },
+            { href: 'data-archive.html', label: 'คลังข้อมูล' }
+          ];
+        }
+        menuBar.innerHTML = menu.map(item =>
+          `<a class="nav-button${item.active ? ' active' : ''}" href="${item.href}" style="padding: 10px 20px; border-radius: 8px; background: ${item.active ? 'linear-gradient(135deg,#4dd0e1 0%,#26c6da 100%)' : 'white'}; font-size: 15px; font-weight: ${item.active ? '600' : '500'}; color: ${item.active ? 'white' : '#00796b'}; text-decoration: none;${item.active ? ' box-shadow: 0 4px 12px rgba(77,208,225,0.25);' : ''}">${item.label}</a>`
+        ).join('');
+      })();
+    </script>
   <div class="app-container">
     <main style="padding:24px;background:linear-gradient(135deg,#e0f7fa 0%,#e8f5e9 50%,#f1f8e9 100%);">
       <div style="max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:24px;">
@@ -290,7 +329,7 @@
     <p style="color:white;font-size:14px;margin:0;">© 2024 งานการพยาบาลผู้ป่วยนอก โรงพยาบาลเวชชารักษ์ ลำปาง | Smart Bed Admission Planner</p>
   </footer>
 
-  <script>
+  <!-- Removed duplicate renderMainMenuBar function and its event listener to prevent double rendering of the menu. -->
     document.addEventListener('DOMContentLoaded', function() {
       var btn = document.getElementById('bookingDropdownBtn');
       var content = document.getElementById('bookingDropdownContent');
