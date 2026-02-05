@@ -1381,20 +1381,8 @@ function updateSummaryCards(admittedPatients, standardBeds, specialBeds) {
   const maleSpecialEl = document.getElementById('ipd-male-special');
 
   // Calculate today's active beds using calculateActiveBedsCountsForMonth
-  let todayActiveBeds = activeBeds;
-  try {
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = today.getMonth();
-    const day = today.getDate();
-    // Only for floor 2 summary
-    const counts = calculateActiveBedsCountsForMonth(2, year, month);
-    todayActiveBeds = counts[day - 1] || 0;
-  } catch (e) {
-    // fallback to previous logic
-  }
-
-  if (activeBedEl) activeBedEl.textContent = todayActiveBeds;
+  // Synchronize Active Beds with Total Patients
+  if (activeBedEl) activeBedEl.textContent = totalPatients;
   if (totalBedsEl) totalBedsEl.textContent = totalBeds;
   if (totalPatientsEl) totalPatientsEl.textContent = totalPatients;
   if (femaleCountEl) femaleCountEl.textContent = femaleCount;
@@ -1420,7 +1408,7 @@ function updateSummaryCards(admittedPatients, standardBeds, specialBeds) {
   localStorage.setItem('ipd_male_special_floor2', maleSpecial);
   // Sync to Dashboard: save to localStorage for floor 2 only
   if (activeBedEl && activeBedEl.id === 'ipd-active-beds') {
-    localStorage.setItem('ipd_active_beds_floor2', todayActiveBeds);
+    localStorage.setItem('ipd_active_beds_floor2', totalPatients);
   }
 }
 
