@@ -173,10 +173,66 @@
     <div class="page-header">
       <h2 style="color:#00796b;font-size:24px;font-weight:600;margin-bottom:8px;">📊 คลังข้อมูลผู้ป่วย</h2>
       <p style="color:#546e7a;font-size:14px;">ค้นหาและดูข้อมูลผู้ป่วยทั้งหมดในระบบ</p>
-      <!-- Submenu -->
-      <div id="data-submenu" style="margin-top:18px; display:flex; gap:12px; flex-wrap:wrap;">
-
+      <div style="margin-top:18px; display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+        <button class="btn btn-primary" onclick="exportAllLocalStorageAsJSON()">⬇️ ส่งออก JSON (ข้อมูลทั้งหมด)</button>
+        <button class="btn btn-secondary" onclick="triggerAllJSONImport()">⬆️ นำเข้า JSON (ข้อมูลทั้งหมด)</button>
+        <input type="file" id="all-json-input" accept="application/json" style="display:none" onchange="handleAllJSONImport(event)">
       </div>
+      <script>
+        // ส่งออกทุกคีย์ใน localStorage เป็น JSON
+        function exportAllLocalStorageAsJSON() {
+          try {
+            const allData = {};
+            for (let i = 0; i < localStorage.length; i++) {
+              const key = localStorage.key(i);
+              allData[key] = localStorage.getItem(key);
+            }
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+            const blob = new Blob([JSON.stringify(allData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const anchor = document.createElement('a');
+            anchor.href = url;
+            anchor.download = `all-localstorage-${timestamp}.json`;
+            document.body.appendChild(anchor);
+            anchor.click();
+            document.body.removeChild(anchor);
+            URL.revokeObjectURL(url);
+          } catch (error) {
+            alert('เกิดข้อผิดพลาดในการส่งออกข้อมูล');
+          }
+        }
+
+        // เรียก input file
+        function triggerAllJSONImport() {
+          const fileInput = document.getElementById('all-json-input');
+          if (fileInput) fileInput.click();
+        }
+
+        // นำเข้าทุกคีย์จาก JSON
+        function handleAllJSONImport(event) {
+          const { target } = event || {};
+          const file = target && target.files ? target.files[0] : undefined;
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = function(loadEvent) {
+            try {
+              const result = loadEvent && loadEvent.target ? loadEvent.target.result : '{}';
+              const data = JSON.parse(result);
+              if (typeof data !== 'object' || Array.isArray(data)) throw new Error('Invalid format');
+              Object.keys(data).forEach(key => {
+                localStorage.setItem(key, data[key]);
+              });
+              alert('นำเข้าข้อมูลสำเร็จแล้ว ทุกคีย์ถูกอัปเดตเรียบร้อย');
+              window.location.reload();
+            } catch (error) {
+              alert('ไฟล์ไม่ถูกต้องหรืออ่านไม่ได้ กรุณาตรวจสอบแล้วลองใหม่');
+            } finally {
+              if (target) target.value = '';
+            }
+          };
+          reader.readAsText(file, 'utf-8');
+        }
+      </script>
     </div>
 
     <!-- Submenu Content -->
