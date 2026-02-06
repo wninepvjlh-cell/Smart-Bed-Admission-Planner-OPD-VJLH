@@ -113,18 +113,18 @@ function getIMCNonIMCByDiseaseFloor2() {
 // --- Data Warehouse: Active Bed Status ---
 // เรียกใช้ loadActiveBedStatus(startDate, endDate) โดย startDate, endDate เป็น yyyy-mm-dd
 function loadActiveBedStatus(startDate, endDate) {
-  const bookingData = JSON.parse(localStorage.getItem('bookingData')) || { admitted: [] };
-  const admittedPatients = bookingData.admitted || [];
   const start = new Date(startDate);
   const end = new Date(endDate);
+  const year = start.getFullYear();
+  const month = start.getMonth();
+  // ใช้สูตรเดียวกับเมนูย่อยชั้น 2
+  const counts = calculateActiveBedsCountsForMonth(2, year, month);
   let html = '<table style="width:100%;border-collapse:collapse;margin-bottom:12px;"><tr style="background:#e0f7fa;"><th style="padding:6px 8px;">วันที่</th><th style="padding:6px 8px;">Active bed</th></tr>';
   let total = 0, days = 0;
   for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+    const dayIdx = d.getDate() - 1;
     const dayStr = d.toISOString().split('T')[0];
-    const count = admittedPatients.filter(p => {
-      return p.admitted_date && p.expected_discharge_date &&
-        p.admitted_date <= dayStr && dayStr <= p.expected_discharge_date;
-    }).length;
+    const count = counts[dayIdx] || 0;
     html += `<tr><td style="padding:6px 8px;">${formatDateThai(dayStr)}</td><td style="padding:6px 8px;text-align:center;">${count}</td></tr>`;
     total += count;
     days++;
