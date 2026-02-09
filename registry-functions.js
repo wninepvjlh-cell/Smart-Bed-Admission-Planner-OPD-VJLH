@@ -610,8 +610,9 @@ function displayConfirmedList() {
         </div>
         <div style="margin-bottom:8px;display:grid;gap:2px;"><div style="color:#999;font-size:13px;font-weight:600;text-transform:uppercase;">HN</div><div style="color:#19724d;font-size:20px;font-weight:700;">${booking.patient_hn}</div><div style="color:#999;font-size:13px;font-weight:600;">ชื่อ-สกุล</div><div style="color:#19724d;font-size:17px;font-weight:600;">${booking.patient_name || '-'}</div></div>
         <div style="height:1px;background:linear-gradient(90deg,#e0e0e0 0%,transparent 100%);margin:10px 0 18px 0;"></div>
-        <div style="display:flex;gap:12px;justify-content:stretch;margin-top:auto;">
+        <div style="display:flex;gap:12px;justify-content:stretch;margin-top:auto;flex-wrap:wrap;">
           <button onclick='event.stopPropagation();openConfirmedDetailModal("${booking.patient_hn}")' style='flex:1;padding:12px 0;background:#f5f5f5;color:#444;border:none;border-radius:10px;cursor:pointer;font-size:15px;font-weight:600;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:6px;' onmouseover='this.style.background="#e0e0e0"' onmouseout='this.style.background="#f5f5f5"'><span style="font-size:18px;">📋</span>ดูข้อมูล</button>
+          <button onclick='event.stopPropagation();openPostponeModal("${booking.patient_hn}")' style='flex:1;padding:12px 0;background:linear-gradient(135deg,#ffa726 0%,#fb8c00 100%);color:white;border:none;border-radius:10px;cursor:pointer;font-size:15px;font-weight:700;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:6px;' onmouseover='this.style.background="#fb8c00"' onmouseout='this.style.background="linear-gradient(135deg,#ffa726 0%,#fb8c00 100%)"'><span style="font-size:18px;">📅</span>เลื่อนนัด</button>
           ${canAdmitToday(booking.admit_date)
             ? `<button onclick='event.stopPropagation();admitPatient("${booking.patient_hn}")' style='flex:1;padding:12px 0;background:#43a047;color:white;border:none;border-radius:10px;cursor:pointer;font-size:15px;font-weight:700;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:6px;' onmouseover='this.style.background="#388e3c"'><span style="font-size:18px;">🗓️</span>ส่ง Admit</button>`
             : `<button disabled style='flex:1;padding:12px 0;background:#e0e0e0;color:#999;border:none;border-radius:10px;cursor:not-allowed;font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px;' title='ยังไม่ถึงวัน Admit'><span style="font-size:18px;">🗓️</span>ส่ง Admit</button>`}
@@ -1192,62 +1193,35 @@ function confirmPostponeBooking() {
     return;
   }
 
+
   const bookingData = JSON.parse(localStorage.getItem('bookingData')) || { booked: [], confirmed: [], admitted: [], cancelled: [] };
-  let patient = null;
   const hn = (currentPostponePatient.patient_hn || '').toString().trim();
-  // Remove from confirmed (robust string match)
-  let confirmedIndex = bookingData.confirmed.findIndex(p => (p.patient_hn || '').toString().trim() === hn);
-  if (confirmedIndex !== -1) {
-    patient = bookingData.confirmed.splice(confirmedIndex, 1)[0];
-  }
-  // Remove ALL from booked (robust string match, in case of duplicates)
-  let bookedPatient = null;
-  bookingData.booked = bookingData.booked.filter(p => {
-    const match = (p.patient_hn || '').toString().trim() === hn;
-    if (match) bookedPatient = p;
-    return !match;
-  });
-  // If not found in confirmed, use from booked
-  if (!patient && bookedPatient) {
-    patient = bookedPatient;
-  }
-  if (!patient) {
+  let patient = bookingData.confirmed.find(p => (p.patient_hn || '').toString().trim() === hn);
+  let patientBooked = bookingData.booked.find(p => (p.patient_hn || '').toString().trim() === hn);
+  if (!patient && !patientBooked) {
     alert('ไม่พบข้อมูลผู้ป่วย');
     return;
   }
-
-  // Save original date BEFORE changing
-  const originalDate = patient.admit_date;
   const loggedUser = sessionStorage.getItem('app_user_name') || 'Unknown';
-
-  patient.postpone_original_date = originalDate;
-  patient.admit_date = newDate;
-  patient.postpone_reason = reason;
-  patient.postpone_date = new Date().toISOString();
-  patient.postponed = true; // Set flag for postponed status
-  patient.postponed_by = loggedUser;
-
-
-  // เพิ่มเข้า booked (ไม่ใช่ confirmed) และตั้ง flag รอ call_confirmed
-  const rescheduledBooking = {
-    ...patient,
-    admit_date: newDate,
-    postpone_original_date: originalDate,
-    postpone_reason: reason,
-    postpone_date: new Date().toISOString(),
-    postponed: true,
-    postponed_by: loggedUser,
-    rescheduled_from: patient.id || null,
-    status: 'booked',
-    call_confirmed: false
-  };
-  // ลบจาก confirmed/postponed เดิม (ถ้ามี)
-  bookingData.booked = bookingData.booked.filter(p => (p.patient_hn || '').toString().trim() !== hn);
-  bookingData.confirmed = bookingData.confirmed.filter(p => (p.patient_hn || '').toString().trim() !== hn);
-  bookingData.postponed = bookingData.postponed ? bookingData.postponed.filter(p => (p.patient_hn || '').toString().trim() !== hn) : [];
-  // เพิ่มเข้า booked
-  bookingData.booked.push(rescheduledBooking);
-
+  if (patient) {
+    // Save original date BEFORE changing
+    const originalDate = patient.admit_date;
+    patient.postpone_original_date = originalDate;
+    patient.admit_date = newDate;
+    patient.postpone_reason = reason;
+    patient.postpone_date = new Date().toISOString();
+    patient.postponed = true; // Set flag for postponed status
+    patient.postponed_by = loggedUser;
+  }
+  if (patientBooked) {
+    const originalDate = patientBooked.admit_date;
+    patientBooked.postpone_original_date = originalDate;
+    patientBooked.admit_date = newDate;
+    patientBooked.postpone_reason = reason;
+    patientBooked.postpone_date = new Date().toISOString();
+    patientBooked.postponed = true;
+    patientBooked.postponed_by = loggedUser;
+  }
   localStorage.setItem('bookingData', JSON.stringify(bookingData));
 
   // ส่งข้อมูลไปยัง Google Sheets (ถ้ามีการตั้งค่า)
