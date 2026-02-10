@@ -1272,18 +1272,7 @@ function admitPatient(hn) {
     return;
   }
   
-  // Check if admit date has arrived
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  
-  const admitDate = new Date(patient.admit_date);
-  admitDate.setHours(0, 0, 0, 0);
-  
-  if (admitDate > today) {
-    const admitDateThai = formatDateTH(patient.admit_date);
-    alert(`ยังไม่ถึงวันที่ Admit\n\nวันที่นัด Admit: ${admitDateThai}\nกรุณารอจนถึงวันที่กำหนด`);
-    return;
-  }
+  // Removed admit date check to allow sending Admit at any time
   
   currentAdmitPatient = hn;
   document.getElementById('admit-patient-hn').textContent = hn;
