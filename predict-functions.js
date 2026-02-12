@@ -1,55 +1,5 @@
-(function runOneTimePatientDataPurge() {
-  if (typeof window === 'undefined') {
-    return;
-  }
-  if (window.__sbpFirestoreSyncEnabled) {
-    return;
-  }
-  if (window.__sbpDataPurge) {
-    window.__sbpDataPurge();
-    return;
-  }
-  const FLAG_KEY = 'sbp_data_purged_20260103';
-  const KEYS_TO_CLEAR = [
-    'bookingData',
-    'ipdData',
-    'ipd_female_standard_floor2',
-    'ipd_female_special_floor2',
-    'ipd_male_standard_floor2',
-    'ipd_male_special_floor2',
-    'ipd_active_beds_floor2'
-  ];
-  window.__sbpDataPurge = function __sbpDataPurge() {
-    if (typeof window === 'undefined' || !window.localStorage) {
-      return;
-    }
-    if (localStorage.getItem(FLAG_KEY)) {
-      return;
-    }
-    KEYS_TO_CLEAR.forEach(key => {
-      try {
-        localStorage.removeItem(key);
-      } catch (error) {
-        console.warn('Unable to remove key from localStorage:', key, error);
-      }
-    });
-    try {
-      localStorage.setItem(FLAG_KEY, new Date().toISOString());
-    } catch (error) {
-      console.warn('Unable to set purge flag in localStorage:', error);
-    }
-  };
-  window.__sbpDataPurge();
-})();
 
-  // อัปเดตเวลาล่าสุด
-  const lastUpdateEl = document.getElementById('predict-last-update');
-  if (lastUpdateEl) {
-    const now = new Date();
-    const thDate = now.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' });
-    const thTime = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-    lastUpdateEl.textContent = `อัปเดตล่าสุด: ${thDate} ${thTime}`;
-  }
+// ...existing code...
 // Predict Functions - AI Bed Availability Prediction
 
 // Bed lists
@@ -78,33 +28,59 @@ function getOccupiedRanges(bedId) {
   // Check booked patients (estimated 3 weeks stay)
   for (const booking of bookingData.booked) {
     if (booking.assigned_bed === bedId) {
-      const start = new Date(booking.admit_date);
-      const end = new Date(start);
-      end.setDate(end.getDate() + 21); // 3 weeks
+      const admit = new Date(booking.admit_date);
+      const today = new Date(); today.setHours(0,0,0,0);
+      let start, end;
+      if (admit > today && admit < new Date(today.getTime() + 21*24*60*60*1000)) {
+        // block [today, today+21)
+        start = today;
+        end = new Date(today);
+        end.setDate(end.getDate() + 21);
+      } else {
+        // block [admit, admit+21)
+        start = admit;
+        end = new Date(admit);
+        end.setDate(end.getDate() + 21);
+      }
       ranges.push({ start, end, type: 'booked', patient: booking });
     }
   }
   // Check confirmed patients (estimated 3 weeks stay)
   for (const booking of bookingData.confirmed) {
     if (booking.assigned_bed === bedId) {
-      const start = new Date(booking.admit_date);
-      const end = new Date(start);
-      end.setDate(end.getDate() + 21); // 3 weeks
+      const admit = new Date(booking.admit_date);
+      const today = new Date(); today.setHours(0,0,0,0);
+      let start, end;
+      if (admit > today && admit < new Date(today.getTime() + 21*24*60*60*1000)) {
+        start = today;
+        end = new Date(today);
+        end.setDate(end.getDate() + 21);
+      } else {
+        start = admit;
+        end = new Date(admit);
+        end.setDate(end.getDate() + 21);
+      }
       ranges.push({ start, end, type: 'confirmed', patient: booking });
     }
   }
-  
   // Check admitted patients (use actual discharge date from IPD)
-  // This includes any updates made through the IPD ward interface
+  // If expected_discharge_date is missing, assume 21 days from admit/admitted_date
   for (const patient of bookingData.admitted) {
-    if (patient.assigned_bed === bedId && patient.expected_discharge_date) {
-      const start = new Date(patient.admitted_date || patient.admit_date);
-      // Logic: ถ้าจำหน่ายวันที่ 27 ธ.ค. → เตียงว่างวันที่ 28 ธ.ค.
-      // วันที่จำหน่าย (expected_discharge_date) = วันสุดท้ายที่ยังมีผู้ป่วยอยู่
-      // เตียงจะว่างตั้งแต่วันถัดไป (วันจำหน่าย + 1 วัน)
-      const dischargeDate = new Date(patient.expected_discharge_date);
-      const end = new Date(dischargeDate);
-      end.setHours(23, 59, 59, 999); // ตั้งเป็นเวลาสิ้นสุดของวันจำหน่าย
+    if (patient.assigned_bed === bedId) {
+      let start = new Date(patient.admitted_date || patient.admit_date);
+      let end;
+      if (patient.expected_discharge_date) {
+        // Logic: ถ้าจำหน่ายวันที่ 27 ธ.ค. → เตียงว่างวันที่ 28 ธ.ค.
+        // วันที่จำหน่าย (expected_discharge_date) = วันสุดท้ายที่ยังมีผู้ป่วยอยู่
+        // เตียงจะว่างตั้งแต่วันถัดไป (วันจำหน่าย + 1 วัน)
+        const dischargeDate = new Date(patient.expected_discharge_date);
+        end = new Date(dischargeDate);
+        end.setHours(23, 59, 59, 999); // ตั้งเป็นเวลาสิ้นสุดของวันจำหน่าย
+      } else {
+        // Fallback: assume 21 days from admit
+        end = new Date(start);
+        end.setDate(end.getDate() + 21);
+      }
       ranges.push({ start, end, type: 'admitted', patient });
     }
   }
@@ -327,10 +303,8 @@ function calculatePredictions() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     let showDate = standardResult.date;
-    // บวก 1 วัน
     if (showDate) {
       showDate = new Date(showDate);
-      showDate.setDate(showDate.getDate() + 1);
     }
     // ถ้า showDate เป็นอดีตหรือข้อมูลผิดปกติ ให้ใช้วันนี้แทน
     if (!showDate || showDate.getTime() < today.getTime()) {
@@ -365,10 +339,8 @@ function calculatePredictions() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     let showDate = specialResult.date;
-    // บวก 1 วัน
     if (showDate) {
       showDate = new Date(showDate);
-      showDate.setDate(showDate.getDate() + 1);
     }
     // ถ้า showDate เป็นอดีตหรือข้อมูลผิดปกติ ให้ใช้วันนี้แทน
     if (!showDate || showDate.getTime() < today.getTime()) {
