@@ -1024,9 +1024,81 @@ function admitPatientFromDetail() {
 }
 
 // Cancel booking from detail modal
+// Confirm cancel booking from cancel modal
+function confirmCancelBooking() {
+  if (!currentCancelPatient) {
+    alert('ไม่พบข้อมูลผู้ป่วย');
+    return;
+  }
+  const reason = document.getElementById('cancel-reason').value.trim();
+  if (!reason) {
+    alert('กรุณาระบุเหตุผลการยกเลิก');
+    return;
+  }
+  const bookingData = loadBookingData();
+  // Remove from confirmed list and add to cancelled
+  const idx = bookingData.confirmed.findIndex(p => p.patient_hn === currentCancelPatient);
+  if (idx === -1) {
+    alert('ไม่พบข้อมูลผู้ป่วยในรายการยืนยัน');
+    return;
+  }
+  const patient = bookingData.confirmed[idx];
+  // Add cancel info
+  const loggedUser = sessionStorage.getItem('app_user_name') || 'Unknown';
+  const cancelledPatient = {
+    ...patient,
+    cancel_reason: reason,
+    cancel_date: new Date().toISOString(),
+    cancelled_by: loggedUser,
+    status: 'cancelled'
+  };
+  if (!bookingData.cancelled) bookingData.cancelled = [];
+  bookingData.cancelled.push(cancelledPatient);
+  bookingData.confirmed.splice(idx, 1);
+  localStorage.setItem('bookingData', JSON.stringify(bookingData));
+  alert(`✅ ยกเลิกการจองเรียบร้อยแล้ว\n\nชื่อ: ${patient.patient_name}\nHN: ${patient.patient_hn}`);
+  closeCancelModal();
+  displayConfirmedList();
+}
 let currentCancelPatient = null;
 
 function cancelConfirmedFromDetail() {
+  // Confirm cancel booking from detail modal
+  function confirmCancelBooking() {
+    if (!currentCancelPatient) {
+      alert('ไม่พบข้อมูลผู้ป่วย');
+      return;
+    }
+    const reason = document.getElementById('cancel-reason').value.trim();
+    if (!reason) {
+      alert('กรุณาระบุเหตุผลการยกเลิก');
+      return;
+    }
+    const bookingData = loadBookingData();
+    const idx = bookingData.confirmed.findIndex(p => p.patient_hn === currentCancelPatient);
+    if (idx === -1) {
+      alert('ไม่พบข้อมูลผู้ป่วย');
+      return;
+    }
+    const patient = bookingData.confirmed[idx];
+    // Move to cancelled list
+    const loggedUser = sessionStorage.getItem('app_user_name') || 'Unknown';
+    const cancelledPatient = {
+      ...patient,
+      cancel_reason: reason,
+      cancel_date: new Date().toISOString(),
+      cancelled_by: loggedUser,
+      action_note: `ยกเลิกโดย ${loggedUser}`
+    };
+    if (!bookingData.cancelled) bookingData.cancelled = [];
+    bookingData.cancelled.push(cancelledPatient);
+    // Remove from confirmed
+    bookingData.confirmed.splice(idx, 1);
+    localStorage.setItem('bookingData', JSON.stringify(bookingData));
+    alert(`✅ ยกเลิกการจองเรียบร้อยแล้ว\n\nชื่อ: ${patient.patient_name}\nHN: ${patient.patient_hn}`);
+    closeCancelModal();
+    displayConfirmedList();
+  }
   const hn = currentConfirmedPatient;
   
   if (!hn) {
